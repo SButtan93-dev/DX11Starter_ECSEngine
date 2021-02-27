@@ -1,5 +1,5 @@
 #pragma once
-#include "entt/src/entt/entt.hpp"
+#include "entt/entt.hpp"
 #pragma comment(lib, "dxguid.lib")
 #pragma comment(lib, "d3dcompiler.lib")
 

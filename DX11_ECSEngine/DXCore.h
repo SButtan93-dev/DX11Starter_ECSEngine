@@ -1,6 +1,6 @@
 #pragma once
 
-#include "entt/src/entt/entt.hpp"
+#include "entt/entt.hpp"
 #include <Windows.h>
 #include <d3d11.h>
 #include <string>

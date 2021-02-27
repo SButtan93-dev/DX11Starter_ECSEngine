@@ -1,5 +1,5 @@
 #pragma once
-#include "entt/src/entt/entt.hpp"
+#include "entt/entt.hpp"
 #include"DXCore.h"
 #include "Components.h"
 #include "SimpleShader.h"

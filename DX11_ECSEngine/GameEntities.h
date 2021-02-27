@@ -1,5 +1,5 @@
 #pragma once
-#include "entt/src/entt/entt.hpp"
+#include "entt/entt.hpp"
 #include <fstream>
 #include <DirectXMath.h>
 #include <vector>
