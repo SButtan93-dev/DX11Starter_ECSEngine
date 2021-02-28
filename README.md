@@ -31,5 +31,5 @@ Clone and run the engine on VS2019.
 
 # Dependencies
 * [EnTT](https://github.com/skypjack/entt) for performance.
-* [NuGet](https://www.nuget.org/packages/directxtex_desktop_win10) for converting textures.
+* [NuGet](https://www.nuget.org/packages/directxtk_desktop_2017/) for converting textures.
 * DirectX 11 as rendering core.
