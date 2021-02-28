@@ -29,6 +29,9 @@ For more more information on the use of EnTT, visit [EnTT wiki](https://github.c
 # Build
 Clone and run the engine on VS2019.
 
+# License
+MIT.
+
 # Dependencies
 * [EnTT](https://github.com/skypjack/entt) architecture for performance.
 * [NuGet](https://www.nuget.org/packages/directxtk_desktop_2017/) for converting textures.
