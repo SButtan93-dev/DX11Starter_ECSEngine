@@ -49,6 +49,7 @@ public:
 
 	void Update(float deltaTime, float totalTime, MeshEntityData* obj_mesh);
 
+	void ShowGPUDebug();
 	// --------------------------------------------------------------------------
 	// Supports:
 	// - Rendering calls

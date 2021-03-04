@@ -429,6 +429,7 @@ HRESULT DXCore::MainRunDX(entt::registry& registry, ISimpleShader* obj_shaderCla
 	// ---------------------
 	auto m_CompId = registry.view<MeshRenderVars>();
 
+	int countMeshes = 0;
 	for (auto entity : m_CompId)
 	{
 		auto& m_comp = m_CompId.get<MeshRenderVars>(entity);
@@ -444,6 +445,12 @@ HRESULT DXCore::MainRunDX(entt::registry& registry, ISimpleShader* obj_shaderCla
 		registry.replace<MeshRenderVars>(entity, abc, abc2, m_comp.numIndices);
 		registry.remove<MeshRenderVars>(entity);
 		registry.destroy(entity);
+
+		countMeshes++;
+		if (countMeshes == 999)
+		{
+			break;
+		}
 	}
 
 	// ---------------------
@@ -462,13 +469,18 @@ HRESULT DXCore::MainRunDX(entt::registry& registry, ISimpleShader* obj_shaderCla
 	registry.replace<RendererMainVars>(entity2, mycompRender.swapChain, mycompRender.device, mycompRender.context, mycompRender.backBufferRTV, mycompRender.depthStencilView, mycompRender.dxFeatureLevel);
 	registry.remove_all(entity2);
 
-	// Uncomment below line for debug purpose
-	/*
-	ID3D11Debug::ReportLiveDeviceObjects(D3D11_RLDO_DETAIL);
-	m_d3dDebug->Release();
-	*/
 
 	return E_NOTIMPL;
+}
+
+void DXCore::ShowGPUDebug()
+{
+	// Uncomment below line for debug purpose
+
+	m_d3dDebug->ReportLiveDeviceObjects(D3D11_RLDO_DETAIL);
+
+	m_d3dDebug->Release();
+
 }
 
 

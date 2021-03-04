@@ -56,6 +56,8 @@ int WINAPI WinMain(
 	// Clean the registry.
 	engine->Clean();
 
+	DXCore::DXCoreInstance->ShowGPUDebug();
+
 	delete engine;
 
 	return 0;
