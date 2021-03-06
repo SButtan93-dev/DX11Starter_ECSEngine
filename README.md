@@ -1,5 +1,5 @@
 # Introduction
-The engine is aimed for learning and education purposes. Designed with a step-by-step instruction on implementation of DirectX 11 rendering pipeline logic and with the foundation of Entity Component System architecture [EnTT](https://github.com/skypjack/entt) for performance.
+The engine is aimed for learning and education purposes. Designed with a step-by-step instruction on implementation of DirectX 11 rendering pipeline logic and with the foundation of [EnTT](https://github.com/skypjack/entt) Entity Component System architecture for performance.
 
 ## Features
 * Controls- WASD for relative movement, spacebar and 'X' key for abolute movement on the same axis, left mouse click for rotation, 'Shift' key for sprint and 'R' for reset.
