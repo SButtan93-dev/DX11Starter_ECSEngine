@@ -262,7 +262,7 @@ HRESULT DXCore::InitDirectX(entt::registry& registry)
 //  - OS-level messages coming in from Windows itself
 //  - Calling update & draw back and forth, forever
 // --------------------------------------------------------
-HRESULT DXCore::MainRunDX(entt::registry& registry, ISimpleShader* obj_shaderClass)
+HRESULT DXCore::MainRunDX(entt::registry& registry, ISimpleShader* obj_shaderClass, SkyShader* obj_SkyShader)
 {	
  	// Grab the start time now that
 	// the game loop is running
@@ -386,7 +386,7 @@ HRESULT DXCore::MainRunDX(entt::registry& registry, ISimpleShader* obj_shaderCla
 			// The game loop
 			// Update(obj_time.deltaTime, obj_time.totalTime, &mycomp4);
 
-			Draw(&mycompRender, obj_shaderClass, &mycomp4, &cameraComponents, &mycompshaderstruct, &mycompPixel, &mycompvsStruct, &mycompPSStruct, &mycomp3, registry, obj_time);
+			Draw(&mycompRender, obj_shaderClass, &mycomp4, &cameraComponents, &mycompshaderstruct, &mycompPixel, &mycompvsStruct, &mycompPSStruct, &mycomp3, registry, obj_time, obj_SkyShader);
 		}
 	}
 
@@ -483,9 +483,9 @@ HRESULT DXCore::MainRunDX(entt::registry& registry, ISimpleShader* obj_shaderCla
 // --------------------------------------------------------------------------
 void DXCore::Draw(RendererMainVars* obj_renderer, ISimpleShader* obj_refShader
 	, MeshEntityData* obj_mesh, CameraComponents* obj_matrices, SimpleShaderVariables* obj_shaderVars, SimpleShaderPixelVariables* obj_pixShaderVars
-	, SimpleVertexShaderStruct* obj_vsStruct, SimplePixelShaderStruct* obj_PSStruct, MeshRenderVars* obj_vbib, entt::registry& registry, TimeData objtime)
+	, SimpleVertexShaderStruct* obj_vsStruct, SimplePixelShaderStruct* obj_PSStruct, MeshRenderVars* obj_vbib, entt::registry& registry, TimeData objtime, SkyShader* obj_SkyShader)
 {
-	const float color[4] = { 0.75f, 0.1f, 0.1f, 0.0f };
+	const float color[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
 
 	// - Clear the render target and depth buffer (erases what's on the screen)
 	// - Do this ONCE PER FRAME
@@ -502,7 +502,6 @@ void DXCore::Draw(RendererMainVars* obj_renderer, ISimpleShader* obj_refShader
 
 	// texture component id
 	auto texture_comp = registry.view<TextureData>();
-
 
 	// Search for each mesh entity
 	for (auto entity : meshEntityComp)
@@ -557,15 +556,20 @@ void DXCore::Draw(RendererMainVars* obj_renderer, ISimpleShader* obj_refShader
 	// different shaders or registers to transfer data
 	for (auto entity : texture_comp)
 	{
+		TextureData& temp_obj = texture_comp.get<TextureData>(entity);
+
+		// could render later because of sampler transparency
+		DrawSky(registry, obj_renderer, texture_comp.get<TextureData>(entity).sampler, *obj_SkyShader, obj_matrices, &temp_obj); 
+
 		obj_refShader->FindVariableBasic("BasicSampler", texture_comp.get<TextureData>(entity).sampler, obj_renderer->context);
 		obj_refShader->FindVariableTexture("DiffuseTexture", texture_comp.get<TextureData>(entity).rustSRV, obj_renderer->context);
 		obj_refShader->FindVariableTexture("SpecularMap", texture_comp.get<TextureData>(entity).specSRV, obj_renderer->context);
+
+		// Store pixel shader data to GPU now
+		obj_refShader->CopyAllBufferDataPixel(obj_renderer->context, obj_pixShaderVars->shaderValid, obj_pixShaderVars->constantBufferCount);
+		obj_refShader->SetShaderAndCBsPixel(obj_pixShaderVars->shaderValid, obj_renderer->context, obj_pixShaderVars->constantBufferCount, obj_PSStruct);
+
 	}
-
-	// Store pixel shader data to GPU now
-	obj_refShader->CopyAllBufferDataPixel(obj_renderer->context, obj_pixShaderVars->shaderValid, obj_pixShaderVars->constantBufferCount);
-	obj_refShader->SetShaderAndCBsPixel(obj_pixShaderVars->shaderValid, obj_renderer->context, obj_pixShaderVars->constantBufferCount, obj_PSStruct);
-
 	// DO EVERYTHING ON GPU BEFORE THIS POINT
 	obj_renderer->swapChain->Present(0, 0);
 	
@@ -577,6 +581,63 @@ void DXCore::Draw(RendererMainVars* obj_renderer, ISimpleShader* obj_refShader
 	
 }
 
+void DXCore::DrawSky(entt::registry& registry, RendererMainVars* obj_renderer, ID3D11SamplerState* sampler, SkyShader& obj_SkyShader, CameraComponents* cam_Comp, TextureData* tex_Comp)
+{
+	auto skyVar = registry.view<MeshEntityDataSky, MeshRenderVarsSky>();
+
+	auto mycompSky = registry.view<SimpleShaderPixelVariablesSky, SimpleShaderVertexVariablesSky, SkyVarsPixelShader, SkyVarsVertexShader>();
+
+	entt::entity temp_Sky = registry.create();
+
+	entt::entity temp_SkyTex = registry.create();
+
+	for (auto entity : mycompSky)
+	{
+		temp_Sky = entity;
+	}
+
+	auto [ps_buf, vs_buf, ps_Sky, vs_Sky] = registry.get<SimpleShaderPixelVariablesSky, SimpleShaderVertexVariablesSky, SkyVarsPixelShader, SkyVarsVertexShader>(temp_Sky);
+
+	auto sky_VarTex = registry.view<SkyVars>();
+
+	for (auto entity : sky_VarTex)
+	{
+		temp_SkyTex = entity;
+	}
+
+	auto sky_GPUVars = registry.get<SkyVars>(temp_SkyTex);
+	for (auto entity : skyVar)
+	{
+		auto [skyMesh, skyVars] = registry.get<MeshEntityDataSky, MeshRenderVarsSky>(entity);
+
+		// Set buffers in the input assembler
+		UINT stride = sizeof(Vertex);
+		UINT offset = 0;
+		obj_renderer->context->IASetVertexBuffers(0, 1, &skyVars.vb, &stride, &offset);
+		obj_renderer->context->IASetIndexBuffer(skyVars.ib, DXGI_FORMAT_R32_UINT, 0);
+		
+		// Set up shaders
+		obj_SkyShader.SetData("view", &cam_Comp->viewMatrix, sizeof(float) * 16);
+		obj_SkyShader.SetData("projection", &cam_Comp->projMatrix, sizeof(float) * 16);
+		obj_SkyShader.CopyAllBufferData(obj_renderer->context, vs_buf.shaderValid, vs_buf.constantBufferCount);
+		obj_SkyShader.SetShaderAndCBs(vs_buf.shaderValid, obj_renderer->context, vs_buf.constantBufferCount, &vs_Sky);
+		obj_SkyShader.FindVariableTexture("Sky", sky_GPUVars.skySRV, obj_renderer->context);
+		obj_SkyShader.FindVariableBasic("BasicSampler", tex_Comp->sampler, obj_renderer->context);
+		obj_SkyShader.SetShaderAndCBsPixel(ps_buf.shaderValid, obj_renderer->context, ps_buf.constantBufferCount, &ps_Sky);
+
+		// Set up sky-specific render states
+		obj_renderer->context->RSSetState(sky_GPUVars.skyRasterState);
+		obj_renderer->context->OMSetDepthStencilState(sky_GPUVars.skyDepthState, 0);
+
+		obj_renderer->context->DrawIndexed(skyVars.numIndices, 0, 0);
+
+		// Reset states
+		obj_renderer->context->RSSetState(0);
+		obj_renderer->context->OMSetDepthStencilState(0, 0);
+
+	}
+
+}
 
 //void DXCore::Update(float deltaTime, float totalTime, MeshEntityData* obj_mesh)
 //{

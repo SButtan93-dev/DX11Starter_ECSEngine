@@ -1,6 +1,6 @@
 #include "SimpleShader.h"
-
 unsigned int constanBufferCount1;
+
 
 ISimpleShader::ISimpleShader()
 {
@@ -70,17 +70,30 @@ entt::registry& ISimpleShader::InitShaderBegin(entt::registry & registry)
 	auto s_initialEntity = registry.create();
 
 	// shaderFile - A "wide string" specifying the compiled shader to load
-	ShaderStrings shaderStringsObj[2];
-	shaderStringsObj[0].pixelShaderString = L"PixelShader.cso";
-	shaderStringsObj[0].vertexShaderString = L"VertexShader.cso";
+	ShaderStrings shaderStringsObj;
+	shaderStringsObj.pixelShaderString = L"PixelShader.cso";
+	shaderStringsObj.vertexShaderString = L"VertexShader.cso";
+
+	ShaderStringsSky shaderStringsObjSky;
+	shaderStringsObjSky.SkyPixelShaderString = L"SkyPS.cso";
+	shaderStringsObjSky.SkyVertexShaderString = L"SkyVS.cso";
 
 	registry.emplace<SimpleVertexShaderStruct>(s_initialEntity, false, nullptr, nullptr);
 	registry.emplace<SimplePixelShaderStruct>(s_initialEntity, nullptr);
 	registry.emplace<SimpleShaderVariables>(s_initialEntity, false, nullptr, nullptr, (unsigned int)0);
 	registry.emplace<SimpleShaderPixelVariables>(s_initialEntity, false, nullptr,	
 		nullptr, (unsigned int)0);
-	registry.emplace_or_replace<ShaderStrings>(s_initialEntity, shaderStringsObj[0].vertexShaderString, shaderStringsObj[0].pixelShaderString);
 
+	// Sky stuff!
+	registry.emplace<SkyVarsVertexShader>(s_initialEntity, false, nullptr, nullptr); //vs
+	registry.emplace<SkyVarsPixelShader>(s_initialEntity, nullptr); // ps
+	registry.emplace<SkyVars>(s_initialEntity, nullptr, nullptr, nullptr); // srv, raster & depth
+	registry.emplace<SimpleShaderVertexVariablesSky>(s_initialEntity, false, nullptr, nullptr, (unsigned int)0);
+	registry.emplace<SimpleShaderPixelVariablesSky>(s_initialEntity, false, nullptr, nullptr, (unsigned int)0); 
+
+	registry.emplace<ShaderStrings>(s_initialEntity, shaderStringsObj.vertexShaderString, shaderStringsObj.pixelShaderString);
+	registry.emplace<ShaderStringsSky>(s_initialEntity, shaderStringsObjSky.SkyVertexShaderString, shaderStringsObjSky.SkyPixelShaderString);
+	
 	return registry;
 }
 
@@ -111,7 +124,7 @@ entt::registry& ISimpleShader::CreateMatrices(entt::registry& registry)
 			0.25f * DirectX::XM_PI,		// Field of View Angle
 			(float)(1280 / 720),		// Aspect ratio
 			0.1f,				// Near clip plane distance
-			100.0f);			// Far clip plane distance
+			1000.0f);			// Far clip plane distance
 		XMStoreFloat4x4(&projection, XMMatrixTranspose(P)); // Transpose for HLSL!
 		//XMStoreFloat4x4(&projection, DirectX::XMMatrixIdentity());
 
@@ -260,9 +273,6 @@ bool ISimpleShader::CreateShader(entt::registry& registry)
 	registry.replace<RendererMainVars>(entity1, c_rendererMainVars.swapChain, c_rendererMainVars.device,
 		c_rendererMainVars.context, c_rendererMainVars.backBufferRTV, c_rendererMainVars.depthStencilView);
 
-	//registry.replace<SimpleShaderVariables>(entity2, c_simpleShaderVariables.shaderValid, c_simpleShaderVariables.shaderBlob,
-		//c_simpleShaderVariables.ConstantBuffer, c_simpleShaderVariables.constantBufferCount);
-
 	registry.replace<SimpleVertexShaderStruct>(entity2, c_simpleVertexShaderStruct.perInstanceCompatible, c_simpleVertexShaderStruct.inputLayout,
 		c_simpleVertexShaderStruct.shader);
 
@@ -271,6 +281,8 @@ bool ISimpleShader::CreateShader(entt::registry& registry)
 
 	return true;
 }
+
+
 
 
 // --------------------------------------------------------
@@ -314,6 +326,7 @@ bool ISimpleShader::CreateShaderPixel(entt::registry & registry)
 	return (result == S_OK);
 }
 
+
 // Part of creating vertex shader
 entt::registry& ISimpleShader::ReadFileToBlob(entt::registry & registry)
 {
@@ -330,6 +343,7 @@ entt::registry& ISimpleShader::ReadFileToBlob(entt::registry & registry)
 	}
 	return registry;
 }
+
 
 // Part of creating pixel shader
 entt::registry& ISimpleShader::ReadFileToBlobPixel(entt::registry & registry)
@@ -352,6 +366,9 @@ entt::registry& ISimpleShader::ReadFileToBlobPixel(entt::registry & registry)
 	}
 	return registry;
 }
+
+
+
 
 // -----------------------------------------------------------------------------------------
 // Loads the specified vertex shader and builds the variable table using shader reflection.  
@@ -503,6 +520,7 @@ entt::registry& ISimpleShader::LoadShaderFile(entt::registry &registry)
 	return registry;
 }
 
+
 // -----------------------------------------------------------------------------------
 // Loads the specified pixel shader and builds the variable table using shader reflection.  
 //
@@ -515,14 +533,9 @@ entt::registry& ISimpleShader::LoadPixelShaderFile(entt::registry &registry)
 
 	auto d_component = registry.view<RendererMainVars>();
 
-	//RendererMainVars get_component;
-
 	for (auto entity : d_component)
 	{
 		RendererMainVars& get_component = d_component.get<RendererMainVars>(entity);
-
-		//temp_device = get_component.device;
-
 
 		auto mainShaderComp = registry.view<SimpleShaderPixelVariables>();
 
@@ -656,8 +669,6 @@ entt::registry& ISimpleShader::LoadPixelShaderFile(entt::registry &registry)
 }
 
 
-
-
 // --------------------------------------------------------
 // Sets a variable by name with arbitrary data of the specified size
 // name - The name of the shader variable
@@ -676,6 +687,7 @@ void ISimpleShader::SetData(std::string name, const void* data, unsigned int siz
 		size);
 }
 
+
 // -------------------------------------------------------------------
 // Sets a variable by name with arbitrary data of the specified size
 // name - The name of the shader variable
@@ -693,6 +705,7 @@ void ISimpleShader::SetDataPixel(std::string name, const DirectX::XMFLOAT3 data,
 		&data,
 		size);
 }
+
 
  //--------------------------------------------------------
  //-Helper for looking up a variable by vertex shader name and also
@@ -723,6 +736,7 @@ SimpleShaderVariable* ISimpleShader::FindVariable(std::string name, int size)
 	return var;
 }
 
+
 //--------------------------------------------------------
 //-Helper for looking up a variable by pixel shader name and also
 //verifying that it is the requested size
@@ -752,6 +766,7 @@ SimpleShaderVariable * ISimpleShader::FindVariablePixel(std::string name, int si
 	return var;
 }
 
+
 void ISimpleShader::FindVariableBasic(std::string name, ID3D11SamplerState* samplerState, ID3D11DeviceContext* deviceContext)
 {
 	// Look for the key
@@ -770,6 +785,7 @@ void ISimpleShader::FindVariableBasic(std::string name, ID3D11SamplerState* samp
 	// Set the shader resource view
 	deviceContext->PSSetSamplers(sampInfo->BindIndex, 1, &samplerState);
 }
+
 
 void ISimpleShader::FindVariableTexture(std::string name, ID3D11ShaderResourceView* srv, ID3D11DeviceContext* deviceContext)
 {
@@ -811,6 +827,7 @@ void ISimpleShader::CopyAllBufferData(ID3D11DeviceContext* deviceContext, bool s
 	}
 }
 
+
 void ISimpleShader::CopyAllBufferDataPixel(ID3D11DeviceContext* deviceContext, bool shaderValid, unsigned int constantBufferCount)
 {
 	// Ensure the shader is valid
@@ -825,6 +842,7 @@ void ISimpleShader::CopyAllBufferDataPixel(ID3D11DeviceContext* deviceContext, b
 			s_shaderVecsPixel.constantBuffers[i].LocalDataBuffer, 0, 0);
 	}
 }
+
 
 // --------------------------------------------------------
 // Sets the vertex shader, input layout and constant buffers
@@ -851,6 +869,7 @@ void ISimpleShader::SetShaderAndCBs(bool shaderValid, ID3D11DeviceContext* devic
 
 	constanBufferCount1 = constantBufferCount;
 }
+
 
 // --------------------------------------------------------
 // Sets the vertex shader, input layout and constant buffers

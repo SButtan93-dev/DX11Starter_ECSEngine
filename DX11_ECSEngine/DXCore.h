@@ -9,6 +9,7 @@
 #include "GameEntities.h"
 #include "SimpleShader.h"
 #include "SystemsPlan.h"
+#include "SkyShader.h"
 #include "Camera.h"
 // We can include the correct library files here
 // instead of in Visual Studio settings if we want
@@ -45,11 +46,11 @@ public:
 	//  - OS-level messages coming in from Windows itself
 	//  - Calling update & draw back and forth, forever
 	// --------------------------------------------------------
-	HRESULT MainRunDX(entt::registry& registry, ISimpleShader* obj_shaderClass);
+	HRESULT MainRunDX(entt::registry& registry, ISimpleShader* obj_shaderClass, SkyShader* obj_SkyShader);
 
 	void Update(float deltaTime, float totalTime, MeshEntityData* obj_mesh);
 
-	// --------------------------------------------------------------------------
+	// ---------------------------------------------------------------------------
 	// Supports:
 	// - Rendering calls
 	// - Multiple meshes (search each entity in EnTT registry assigned in 
@@ -60,7 +61,9 @@ public:
 	void Draw(RendererMainVars* obj_renderer, ISimpleShader* obj_refShader, 
 		MeshEntityData* obj_mesh, CameraComponents* obj_matrices, SimpleShaderVariables* obj_shaderVars, 
 		SimpleShaderPixelVariables* obj_pixShaderVars, SimpleVertexShaderStruct* obj_vsStruct, 
-		SimplePixelShaderStruct* obj_PSStruct, MeshRenderVars* obj_vbib, entt::registry& registry, TimeData objtime);
+		SimplePixelShaderStruct* obj_PSStruct, MeshRenderVars* obj_vbib, entt::registry& registry, TimeData objtime, SkyShader* obj_SkyShader);
+
+	void DrawSky(entt::registry& registry, RendererMainVars* obj_renderer, ID3D11SamplerState* sampler, SkyShader& obj_SkyShader, CameraComponents* cam_Comp, TextureData* tex_Comp);
 
 	GameEntities Mesh; // systems, no data
 	Camera camera;	   // systems, no data

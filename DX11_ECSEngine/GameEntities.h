@@ -17,6 +17,8 @@ public:
 	// -----------------------------------------------------------------------
 	void LoadMesh(const char* objFile, entt::registry& registry);
 
+	void LoadMeshSky(const char* objFile, entt::registry& registry);
+
 	// ---------------------------------------------------
 	// - Loads and saves textures using DX texture library
 	// - To load multiple textures, create more entities

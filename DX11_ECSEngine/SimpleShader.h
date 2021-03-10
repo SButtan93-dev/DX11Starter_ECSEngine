@@ -24,21 +24,34 @@
 class ISimpleShader
 {
 public:
-		ISimpleShader();
+	 ISimpleShader();
 	 ~ISimpleShader();
 	entt::registry& InitShaderBegin(entt::registry &registry);
 
 	bool CreateShader(entt::registry& registry);
+	//bool CreateShaderSky(entt::registry& registry);
 	bool CreateShaderPixel(entt::registry & registry);
+	//bool CreateShaderPixelSky(entt::registry& registry);
 
 	entt::registry& ReadFileToBlob(entt::registry& registry);
 	entt::registry & ReadFileToBlobPixel(entt::registry & registry);
 
+	//entt::registry& ReadFileToBlob_VertexSky(entt::registry& registry);
+
+	//entt::registry& ReadFileToBlob_PixelSky(entt::registry& registry);
+
 	entt::registry& LoadShaderFile(entt::registry &registry);
+	//void SetSkyVars(entt::registry& registry);
+	//entt::registry& LoadShaderFileSky(entt::registry& registry);
 	entt::registry & LoadPixelShaderFile(entt::registry & registry);
+
+	//entt::registry& LoadPixelShaderFileSky(entt::registry& registry);
 
 	ShaderVectorsofStructs s_shaderVecs = {0};
 	ShaderVectorsofStructsPixel s_shaderVecsPixel = {0};
+
+	//ShaderVectorsofStructsSky s_shaderVecsSky = { 0 };
+	//ShaderVectorsofStructsPixelSky s_shaderVecsPixelSky = { 0 };
 
 	entt::registry& CreateMatrices(entt::registry& registry);
 

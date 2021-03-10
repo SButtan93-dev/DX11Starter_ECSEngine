@@ -69,6 +69,12 @@ void InitEngine::InitEntt(RenderWindow mystruct)
 
 	SystemsPlan::Plan->LoadCreatePixelShader(m_rendererRegistry);
 
+	SystemsPlan::Plan->LoadCreateShaderSky(m_rendererRegistry); // Sky
+
+	SystemsPlan::Plan->LoadCreatePixelShaderSky(m_rendererRegistry); // Sky
+
+	SystemsPlan::Plan->SetSkyShaderVars(m_rendererRegistry); // Sky
+
 	SystemsPlan::Plan->CreateMatricesGeometry(m_rendererRegistry);
 
 	auto& t_comp = m_rendererRegistry.emplace<TextureData>(texture, nullptr, nullptr, nullptr, nullptr);
@@ -76,7 +82,7 @@ void InitEngine::InitEntt(RenderWindow mystruct)
 	Mesh->InitTexture(m_rendererRegistry);
 
 	// Enter the number of mesh entities
-	unsigned int m_count = 1000;
+	unsigned int m_count = 200;
 
 	// Create empty mesh entities
 	for (unsigned int i = 0; i < m_count; i++)
@@ -90,6 +96,14 @@ void InitEngine::InitEntt(RenderWindow mystruct)
 
 	// Load mesh entities 'm_count' times in the buffers.
 	Mesh->LoadMesh("Models/Sphere.obj", m_rendererRegistry);
+
+	entt::entity newEntity = m_rendererRegistry.create();
+	m_rendererRegistry.emplace<MeshRenderVarsSky>(newEntity, nullptr, nullptr, 0);
+	DirectX::XMFLOAT4X4 abc;
+	DirectX::XMStoreFloat4x4(&abc, DirectX::XMMatrixIdentity());
+	m_rendererRegistry.emplace<MeshEntityDataSky>(newEntity, abc, DirectX::XMFLOAT3(0.0f, 0.0f, 0.0f), DirectX::XMFLOAT3(0.0f, 0.0f, 0.0f), DirectX::XMFLOAT3(0.0f, 0.0f, 0.0f));
+	// Sky
+	Mesh->LoadMeshSky("Models/Cube.obj", m_rendererRegistry);
 
 	// All set, pass the registry 
 	// to core game loop system
