@@ -504,28 +504,24 @@ void DXCore::Draw(RendererMainVars* obj_renderer, ISimpleShader* obj_refShader
 	auto texture_comp = registry.view<TextureData>();
 
 	// Search for each mesh entity
-	for (auto entity : meshEntityComp)
+	for(auto [entity, obj_mesh, obj_vbib]: meshEntityComp.each()) 
 	{	
-		*obj_mesh = meshEntityComp.get<MeshEntityData>(entity); // transforms
-
-		GameEntities::Rotate(0.0f, objtime.totalTime, 0.0f, &obj_mesh->rotation); // rotate the mesh
-
-		*obj_vbib = meshEntityComp.get<MeshRenderVars>(entity); // get mesh info
+		GameEntities::Rotate(0.0f, objtime.totalTime, 0.0f, &obj_mesh.rotation); // rotate the mesh
 
 		// Mesh movement and camera properties
-		DirectX::XMMATRIX trans = DirectX::XMMatrixTranslation(obj_mesh->position.x, obj_mesh->position.y, obj_mesh->position.z);
-		DirectX::XMMATRIX rotX = DirectX::XMMatrixRotationX(obj_mesh->rotation.x);
-		DirectX::XMMATRIX rotY = DirectX::XMMatrixRotationY(obj_mesh->rotation.y);
-		DirectX::XMMATRIX rotZ = DirectX::XMMatrixRotationZ(obj_mesh->rotation.z);
-		DirectX::XMMATRIX sc = DirectX::XMMatrixScaling(obj_mesh->scale.x, obj_mesh->scale.y, obj_mesh->scale.z);
+		DirectX::XMMATRIX trans = DirectX::XMMatrixTranslation(obj_mesh.position.x, obj_mesh.position.y, obj_mesh.position.z);
+		DirectX::XMMATRIX rotX = DirectX::XMMatrixRotationX(obj_mesh.rotation.x);
+		DirectX::XMMATRIX rotY = DirectX::XMMatrixRotationY(obj_mesh.rotation.y);
+		DirectX::XMMATRIX rotZ = DirectX::XMMatrixRotationZ(obj_mesh.rotation.z);
+		DirectX::XMMATRIX sc = DirectX::XMMatrixScaling(obj_mesh.scale.x, obj_mesh.scale.y, obj_mesh.scale.z);
 
 		// Need to implement rotation logic through mouse window event 
 		DirectX::XMMATRIX total = sc * rotZ * rotY * rotX * trans; 
 
-		XMStoreFloat4x4(&obj_mesh->worldMatrix, XMMatrixTranspose(total)); // transpose to match DX11 shader
+		XMStoreFloat4x4(&obj_mesh.worldMatrix, XMMatrixTranspose(total)); // transpose to match DX11 shader
 
 		// Translated mesh vertices
-		obj_refShader->SetData("world", &obj_mesh->worldMatrix, sizeof(float) * 16); 
+		obj_refShader->SetData("world", &obj_mesh.worldMatrix, sizeof(float) * 16); 
 
 		// Camera
 		obj_refShader->SetData("view", &obj_matrices->viewMatrix, sizeof(float) * 16); 
@@ -539,9 +535,9 @@ void DXCore::Draw(RendererMainVars* obj_renderer, ISimpleShader* obj_refShader
 		// Still not displayed on screen. SwapChain() not called yet.
 		UINT stride = sizeof(Vertex);
 		UINT offset = 0;
-		obj_renderer->context->IASetVertexBuffers(0, 1, &obj_vbib->vb, &stride, &offset);
-		obj_renderer->context->IASetIndexBuffer(obj_vbib->ib, DXGI_FORMAT_R32_UINT, 0);
-		obj_renderer->context->DrawIndexed(obj_vbib->numIndices, 0, 0);		
+		obj_renderer->context->IASetVertexBuffers(0, 1, &obj_vbib.vb, &stride, &offset);
+		obj_renderer->context->IASetIndexBuffer(obj_vbib.ib, DXGI_FORMAT_R32_UINT, 0);
+		obj_renderer->context->DrawIndexed(obj_vbib.numIndices, 0, 0);		
 	}
 	
 	// Send lighting and camera data to GPU

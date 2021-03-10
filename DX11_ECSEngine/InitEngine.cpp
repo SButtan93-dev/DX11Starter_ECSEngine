@@ -82,7 +82,7 @@ void InitEngine::InitEntt(RenderWindow mystruct)
 	Mesh->InitTexture(m_rendererRegistry);
 
 	// Enter the number of mesh entities
-	unsigned int m_count = 200;
+	unsigned int m_count = 1000;
 
 	// Create empty mesh entities
 	for (unsigned int i = 0; i < m_count; i++)

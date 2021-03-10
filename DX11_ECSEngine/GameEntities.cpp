@@ -27,7 +27,7 @@ void GameEntities::LoadMesh(const char * objFile, entt::registry & registry)
 	auto mycompMesh = registry.view<MeshEntityData, MeshRenderVars>(); // mesh
 	
 	// 
-	for (auto entity : mycompMesh)
+	for (auto [entity, obj_MeshEntityDefault, mesh_comp] : mycompMesh.each())
 	{
 
 		new_MeshEntity = entity;
@@ -191,7 +191,7 @@ void GameEntities::LoadMesh(const char * objFile, entt::registry & registry)
 		//auto vbib_comp = registry.view<MeshRenderVars, entt::tag<"VbIb"_hs>>();
 
 		// Local mesh properties
-		MeshEntityData obj_MeshEntityDefault;
+		//MeshEntityData obj_MeshEntityDefault;
 
 		// Set up mesh transforms
 		DirectX::XMStoreFloat4x4(&obj_MeshEntityDefault.worldMatrix, DirectX::XMMatrixIdentity());
@@ -215,7 +215,7 @@ void GameEntities::LoadMesh(const char * objFile, entt::registry & registry)
 		auto m_comp = registry.view<RendererMainVars>();
 
 		// Do we have this vb,ib & indices component in the registry?
-		auto mesh_comp = registry.get<MeshRenderVars>(new_MeshEntity);
+		//auto mesh_comp = registry.get<MeshRenderVars>(new_MeshEntity);
 
 		// Store vertex buffer, index buffer & indices.
 		for (auto entity : m_comp)
