@@ -1,8 +1,12 @@
+#include "SkyShader.h"
 #include "SystemsPlan.h"
 
 SystemsPlan* SystemsPlan::Plan = 0;
 
 ISimpleShader* s_ShaderObj = new ISimpleShader();
+
+SkyShader* sky_obj = new SkyShader();
+
 
 SystemsPlan::SystemsPlan()
 {
@@ -15,6 +19,8 @@ SystemsPlan::~SystemsPlan()
 	//delete e_gameObj;
 
 	delete s_ShaderObj;
+
+	delete sky_obj;
 
 	//DXCore::DXCoreInstance->~DXCore();
 	//s_ShaderObj.s_shaderVecs->constantBuffers->ConstantBuffer->Release();
@@ -77,7 +83,7 @@ void SystemsPlan::CameraUpdate(CameraComponents* comps, float dt, entt::registry
 // ---------------------------
 void SystemsPlan::RunDXCore(entt::registry & registry)
 {
-	DXCore::DXCoreInstance->MainRunDX(registry, s_ShaderObj);
+	DXCore::DXCoreInstance->MainRunDX(registry, s_ShaderObj, sky_obj);
 }
 
 
@@ -116,6 +122,23 @@ entt::registry & SystemsPlan::LoadCreatePixelShader(entt::registry & registry)
 entt::registry & SystemsPlan::CreateMatricesGeometry(entt::registry & registry)
 {
 	return s_ShaderObj->CreateMatrices(registry);
+}
+
+
+void SystemsPlan::LoadCreateShaderSky(entt::registry& registry)
+{
+	sky_obj->LoadShaderFileSky(registry);
+}
+
+
+void SystemsPlan::LoadCreatePixelShaderSky(entt::registry& registry)
+{
+	sky_obj->LoadPixelShaderFileSky(registry);
+}
+
+void SystemsPlan::SetSkyShaderVars(entt::registry& registry)
+{
+	sky_obj->SetSkyVars(registry);
 }
 
 

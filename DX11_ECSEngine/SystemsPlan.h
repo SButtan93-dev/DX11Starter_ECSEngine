@@ -3,6 +3,7 @@
 #include"DXCore.h"
 #include "Components.h"
 #include "SimpleShader.h"
+#include "SkyShader.h"
 #include "GameEntities.h"
 #include "Camera.h"
 
@@ -18,8 +19,6 @@ public:
 
 	void InitDirectXVars(entt::registry& registry);
 
-	
-
 	Camera camera;
 
 	entt::registry& InitShaderVars(entt::registry& registry);
@@ -30,20 +29,26 @@ public:
 
 	entt::registry & CreateMatricesGeometry(entt::registry& registry);
 
-	//entt::registry& CreateVbIb(entt::registry& registry);
+	void LoadCreateShaderSky(entt::registry& registry);
 
-	//entt::registry& CreateModelGeometry(entt::registry& registry);
+	void LoadCreatePixelShaderSky(entt::registry& registry);
 
-//	void CleanUp(entt::registry& registry);
+	void SetSkyShaderVars(entt::registry& registry);
 
-//	entt::registry& GetUpdatedRegistryDXCore(entt::registry& registry);
+	//	entt::registry& CreateVbIb(entt::registry& registry);
+
+	//	entt::registry& CreateModelGeometry(entt::registry& registry);
+
+	//	void CleanUp(entt::registry& registry);
+
+	//	entt::registry& GetUpdatedRegistryDXCore(entt::registry& registry);
 
 	void CameraUpdate(CameraComponents* comps, float dt, entt::registry& registry);
 
-	//entt::registry& InitTexture(entt::registry& registry);
+	// entt::registry& InitTexture(entt::registry& registry);
 
 	void RunDXCore(entt::registry& registry);
 
-	//GameEntities* e_gameObj = new GameEntities();
+	// GameEntities* e_gameObj = new GameEntities();
 };
 

@@ -55,6 +55,7 @@ struct RenderWindowDimensions
 	unsigned int height;
 };
 
+
 // ------------------------------------
 // Main GPU variables handled by D3D11
 // ------------------------------------
@@ -92,6 +93,28 @@ struct SimpleShaderPixelVariables
 };
 
 
+// Sky
+// Vertex variables for creating shader
+struct SimpleShaderVertexVariablesSky
+{
+	bool shaderValid;
+	ID3DBlob* shaderBlob;
+	ID3D11Buffer* ConstantBuffer;
+	unsigned int constantBufferCount;
+};
+
+
+// Sky
+// Pixel variables for creating shader
+struct SimpleShaderPixelVariablesSky
+{
+	bool shaderValid;
+	ID3DBlob* shaderBlob = 0;
+	ID3D11Buffer* ConstantBuffer = 0;
+	unsigned int constantBufferCount;
+};
+
+
 // -------------------------------------------------------------------------------
 // - Attempt to create inputLayout for the vertex shader
 // - Can be loaded for more shaders for every material, for now it is 
@@ -116,6 +139,22 @@ struct SimplePixelShaderStruct
 };
 
 
+// Sky Vertex Shader
+struct SkyVarsVertexShader
+{
+	bool perInstanceCompatible;
+	ID3D11InputLayout* inputLayout = 0;
+	ID3D11VertexShader* shader = 0;
+};
+
+
+// Sky Pixel Shader
+struct SkyVarsPixelShader
+{
+	ID3D11PixelShader* shader = 0;
+};
+
+
 // ------------------------------------------------------------------------
 // - String names passed for creating the two shaders
 // - Could create the instances of same component 
@@ -125,6 +164,17 @@ struct ShaderStrings
 {
 	LPCWSTR vertexShaderString;
 	LPCWSTR pixelShaderString;
+};
+
+// ------------------------------------------------------------------------
+// - String names passed for creating the two shaders
+// - Could create the instances of same component 
+//   and attach to the same entity to load more shader files in 1 for loop
+// ------------------------------------------------------------------------
+struct ShaderStringsSky
+{
+	LPCWSTR SkyVertexShaderString;
+	LPCWSTR SkyPixelShaderString;
 };
 
 
@@ -155,6 +205,7 @@ struct SimpleConstantBuffer
 	std::vector<SimpleShaderVariable> Variables;
 };
 
+
 // ---------------------------Part (1/2)---------------------------------------
 // - Vertex shader contents extracted from .hlsl
 // - Expand for more vertex shaders and search from library with key
@@ -176,6 +227,40 @@ struct ShaderVectorsofStructs
 // - Expand for more vertex shaders and search from library with key
 // -------------------------------------------------------------------------
 struct ShaderVectorsofStructsPixel
+{
+	SimpleConstantBuffer* constantBuffers; // For index-based lookup
+	std::vector<SimpleSRV*>		shaderResourceViews;
+	std::vector<SimpleSampler*>	samplerStates;
+	std::unordered_map<std::string, SimpleConstantBuffer*> cbTable;
+	std::unordered_map<std::string, SimpleShaderVariable> varTable;
+	std::unordered_map<std::string, SimpleSRV*> textureTable;
+	std::unordered_map<std::string, SimpleSampler*> samplerTable;
+};
+
+
+//-------------------------Sky Resources---------------------------------------
+// ---------------------------Part (1/2)---------------------------------------
+// - Vertex shader contents extracted from .hlsl
+// - Expand for more vertex shaders and search from library with key
+// ----------------------------------------------------------------------------
+struct ShaderVectorsofStructsSky
+{
+	SimpleConstantBuffer* constantBuffers = 0; // For index-based lookup
+	std::vector<SimpleSRV*>		shaderResourceViews = { 0 };
+	std::vector<SimpleSampler*>	samplerStates = { 0 };
+	std::unordered_map<std::string, SimpleConstantBuffer*> cbTable;
+	std::unordered_map<std::string, SimpleShaderVariable> varTable;
+	std::unordered_map<std::string, SimpleSRV*> textureTable;
+	std::unordered_map<std::string, SimpleSampler*> samplerTable;
+};
+
+
+//------------------------------Sky Resources-------------------------------
+// ------------------------------Part (2/2)---------------------------------
+// - Pixel shader contents extracted from .hlsl
+// - Expand for more vertex shaders and search from library with key
+// -------------------------------------------------------------------------
+struct ShaderVectorsofStructsPixelSky
 {
 	SimpleConstantBuffer* constantBuffers; // For index-based lookup
 	std::vector<SimpleSRV*>		shaderResourceViews;
@@ -212,6 +297,25 @@ struct MeshRenderVars
 	int numIndices;
 };
 
+// Sky mesh
+// ---------------------------------------------
+// Store mesh buffers after loading into device.
+// ---------------------------------------------
+struct MeshRenderVarsSky
+{
+	ID3D11Buffer* vb;
+	ID3D11Buffer* ib;
+	int numIndices;
+};
+
+// Sky stuff!
+struct SkyVars
+{
+	ID3D11ShaderResourceView* skySRV;
+	ID3D11RasterizerState* skyRasterState;
+	ID3D11DepthStencilState* skyDepthState;
+};
+
 
 // -------------------------
 // Calculate for each frame
@@ -222,7 +326,7 @@ struct TimeData
 	double perfCounterSeconds;
 	float totalTime;
 	float deltaTime;
-	__int64 startTime;
+	__int64 startTime; 
 	__int64 currentTime;
 	__int64 previousTime;
 };
@@ -259,6 +363,20 @@ struct Vertex
 // - Could change transform component for each mesh every frame
 // -------------------------------------------------------------
 struct MeshEntityData
+{
+	DirectX::XMFLOAT4X4 worldMatrix;
+	DirectX::XMFLOAT3 position;
+	DirectX::XMFLOAT3 rotation;
+	DirectX::XMFLOAT3 scale;
+};
+
+
+// -------------------------------------------------------------
+// - Pass 'worldMatrix' to vertex shader
+// each frame for each entity
+// - Could change transform component for each mesh every frame
+// -------------------------------------------------------------
+struct MeshEntityDataSky
 {
 	DirectX::XMFLOAT4X4 worldMatrix;
 	DirectX::XMFLOAT3 position;
