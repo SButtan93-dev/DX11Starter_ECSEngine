@@ -1,9 +1,14 @@
 #pragma once
 #include "entt/entt.hpp"
-#include <fstream>
+#include "assimp/Importer.hpp"
+#include "Assimp/assimp/scene.h"
+#include "Assimp/assimp/postprocess.h"
 #include <DirectXMath.h>
 #include <vector>
 #include "Components.h"
+
+
+
 class GameEntities
 {
 public:
@@ -24,7 +29,7 @@ public:
 	// - To load multiple textures, create more entities
 	// ---------------------------------------------------
 	void InitTexture(entt::registry& registry);
-
+	
 	// --------------------------------------------------
     // - Used for test to show that texture components
     //   can be toggled in game loop.
