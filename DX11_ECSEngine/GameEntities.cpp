@@ -16,6 +16,19 @@ GameEntities::~GameEntities()
 {
 }
 
+void GameEntities::VertexBoneData::AddBoneData(UINT BoneID, float Weight,UINT x)
+{
+	for (UINT i = 0; i < sizeof(IDs); i++) {
+		if (Weights[i] == 0.0) {
+			IDs[i] = BoneID;
+			Weights[i] = Weight;
+			return;
+		}
+	}
+
+	// should never get here - more bones than we have space for
+	assert(0);
+}
 
 // -----------------------------------------------------------------------
 // - Iterate 'n' times through all entities having the two mesh components.
@@ -64,9 +77,9 @@ void GameEntities::LoadMesh(const char* objFile, entt::registry& registry)
 			vertex.Position.y = mesh->mVertices[i].y;
 			vertex.Position.z = mesh->mVertices[i].z;
 
-			vertex.Normal.x = mesh->mNormals[i].x;
-			vertex.Normal.y = mesh->mNormals[i].y;
-			vertex.Normal.z = mesh->mNormals[i].z;
+			//vertex.Normal.x = mesh->mNormals[i].x;
+			//vertex.Normal.y = mesh->mNormals[i].y;
+			//vertex.Normal.z = mesh->mNormals[i].z;
 
 			vertex.UV.x = mesh->mTextureCoords[0][i].x;
 			vertex.UV.y = mesh->mTextureCoords[0][i].y;
@@ -153,7 +166,54 @@ void GameEntities::LoadMesh(const char* objFile, entt::registry& registry)
 		registry.replace<MeshEntityData>(new_MeshEntity, obj_MeshEntityDefault.worldMatrix, obj_MeshEntityDefault.position, obj_MeshEntityDefault.rotation
 			, obj_MeshEntityDefault.scale);
 
+		LoadBones(mesh);
 	}
+
+	
+}
+
+void GameEntities::LoadBones(aiMesh* mesh)
+{
+	std::vector<VertexBoneData> Bones;
+
+	Bones.resize(mesh->mNumVertices);
+
+	for (int i = 0; i < mesh->mNumBones; i++)
+	{
+		int BoneIndex = 0;
+		std::string BoneName(mesh->mBones[i]->mName.data);
+
+		if (mBoneMapping.find(BoneName) == mBoneMapping.end())
+		{
+			BoneIndex = mNumBones;
+			mNumBones++;
+			BoneInfo bi;
+			mBoneInfo.push_back(bi);
+
+		}
+		else
+		{
+			BoneIndex = mBoneMapping[BoneName];
+		}
+		aiMatrix4x4 offset = mesh->mBones[i]->mOffsetMatrix;
+		//DirectX::XMMatrixTranspose(temp);
+		DirectX::XMMATRIX meshToBoneTransform = DirectX::XMMatrixTranspose(
+			DirectX::XMMATRIX(offset.a1, offset.a2, offset.a3, offset.a4,
+				offset.b1, offset.b2, offset.b3, offset.b4,
+				offset.c1, offset.c2, offset.c3, offset.c4,
+				offset.d1, offset.d2, offset.d3, offset.d4));
+		mBoneInfo[BoneIndex].BoneOffset = meshToBoneTransform;
+		mBoneMapping[BoneName] = BoneIndex;
+
+		for (int x = 0; x < mesh->mBones[i]->mNumWeights; x++)
+		{
+			int VertexID = mesh->mBones[i]->mWeights[x].mVertexId;
+			float Weight = mesh->mBones[i]->mWeights[x].mWeight;
+
+			Bones[VertexID].AddBoneData(BoneIndex, Weight, x);
+		}
+	}
+
 }
 
 

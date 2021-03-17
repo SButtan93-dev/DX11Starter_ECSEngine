@@ -506,7 +506,7 @@ void DXCore::Draw(RendererMainVars* obj_renderer, ISimpleShader* obj_refShader
 	// Search for each mesh entity
 	for(auto [entity, obj_mesh, obj_vbib]: meshEntityComp.each()) 
 	{	
-		GameEntities::Rotate(0.0f, objtime.totalTime, 0.0f, &obj_mesh.rotation); // rotate the mesh
+		//GameEntities::Rotate(0.0f, objtime.totalTime, 0.0f, &obj_mesh.rotation); // rotate the mesh
 
 		// Mesh movement and camera properties
 		DirectX::XMMATRIX trans = DirectX::XMMatrixTranslation(obj_mesh.position.x, obj_mesh.position.y, obj_mesh.position.z);

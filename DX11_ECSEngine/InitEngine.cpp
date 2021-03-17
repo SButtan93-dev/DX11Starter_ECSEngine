@@ -82,7 +82,7 @@ void InitEngine::InitEntt(RenderWindow mystruct)
 	Mesh->InitTexture(m_rendererRegistry);
 
 	// Enter the number of mesh entities
-	unsigned int m_count = 200;
+	unsigned int m_count = 1;
 
 	// Create empty mesh entities
 	for (unsigned int i = 0; i < m_count; i++)
@@ -95,7 +95,7 @@ void InitEngine::InitEntt(RenderWindow mystruct)
 	}
 
 	// Load mesh entities 'm_count' times in the buffers.
-	Mesh->LoadMesh("Models/Sphere.obj", m_rendererRegistry);
+	Mesh->LoadMesh("Models/boblampclean.md5mesh", m_rendererRegistry);
 
 	entt::entity newEntity = m_rendererRegistry.create();
 	m_rendererRegistry.emplace<MeshRenderVarsSky>(newEntity, nullptr, nullptr, 0);

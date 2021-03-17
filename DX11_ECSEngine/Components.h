@@ -298,29 +298,29 @@ struct MeshRenderVars
 };
 
 
-// Animation stuff
-struct aiNode
-{
-	std::string name;
-	DirectX::XMFLOAT4X4 Transformation;
-	aiNode* Parent;
-	aiNode* child;
-};
-
-struct aiNodeAnim
-{
-	std::string name;
-	DirectX::XMFLOAT3 positions;
-	aiQuaternion rotations;
-	DirectX::XMFLOAT3 scale;
-
-};
-
-struct aiAnimation
-{
-	double duration;
-	double TicksPerSecond
-};
+//// Animation stuff
+//struct aiNode
+//{
+//	std::string name;
+//	DirectX::XMFLOAT4X4 Transformation;
+//	aiNode* Parent;
+//	aiNode* child;
+//};
+//
+//struct aiNodeAnim
+//{
+//	std::string name;
+//	DirectX::XMFLOAT3 positions;
+//	aiQuaternion rotations;
+//	DirectX::XMFLOAT3 scale;
+//
+//};
+//
+//struct aiAnimation
+//{
+//	double duration;
+//	double TicksPerSecond
+//};
 // Sky mesh
 // ---------------------------------------------
 // Store mesh buffers after loading into device.
