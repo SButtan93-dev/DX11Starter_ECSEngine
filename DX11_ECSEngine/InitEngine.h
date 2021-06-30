@@ -15,6 +15,7 @@ public:
 	entt::registry m_rendererRegistry;
 	GameEntities* Mesh = new GameEntities();
 
+
 	// ----------------------------------------------------------------------
 	// - Initialize entities with components and store them in the registry.
 	// - Call systems to initialize windows, GPU, camera, meshes and texture.

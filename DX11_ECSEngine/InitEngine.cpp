@@ -84,6 +84,8 @@ void InitEngine::InitEntt(RenderWindow mystruct)
 	// Enter the number of mesh entities
 	unsigned int m_count = 1;
 
+	//VertexBoneData bl;
+	//bl.IDs.push_back(0);
 	// Create empty mesh entities
 	for (unsigned int i = 0; i < m_count; i++)
 	{
@@ -92,22 +94,24 @@ void InitEngine::InitEntt(RenderWindow mystruct)
 		DirectX::XMFLOAT4X4 abc;
 		DirectX::XMStoreFloat4x4(&abc, DirectX::XMMatrixIdentity());
 		m_rendererRegistry.emplace<MeshEntityData>(newEntity, abc, DirectX::XMFLOAT3(0.0f, 0.0f, 0.0f), DirectX::XMFLOAT3(0.0f, 0.0f, 0.0f), DirectX::XMFLOAT3(0.0f, 0.0f, 0.0f));
+		//m_rendererRegistry.emplace<VertexBoneData>(newEntity, bl);
 	}
 
 	// Load mesh entities 'm_count' times in the buffers.
-	Mesh->LoadMesh("Models/boblampclean.md5mesh", m_rendererRegistry);
+	Mesh->LoadMesh("Models/silly_dancing.fbx", m_rendererRegistry);
 
 	entt::entity newEntity = m_rendererRegistry.create();
 	m_rendererRegistry.emplace<MeshRenderVarsSky>(newEntity, nullptr, nullptr, 0);
 	DirectX::XMFLOAT4X4 abc;
 	DirectX::XMStoreFloat4x4(&abc, DirectX::XMMatrixIdentity());
 	m_rendererRegistry.emplace<MeshEntityDataSky>(newEntity, abc, DirectX::XMFLOAT3(0.0f, 0.0f, 0.0f), DirectX::XMFLOAT3(0.0f, 0.0f, 0.0f), DirectX::XMFLOAT3(0.0f, 0.0f, 0.0f));
+
 	// Sky
 	Mesh->LoadMeshSky("Models/Cube.obj", m_rendererRegistry);
 
 	// All set, pass the registry 
 	// to core game loop system
-	SystemsPlan::Plan->RunDXCore(m_rendererRegistry);
+	SystemsPlan::Plan->RunDXCore(m_rendererRegistry, Mesh);
 }
 
 // Try releasing the GPU variables from the entities.
@@ -173,6 +177,22 @@ void InitEngine::Clean()
 
 		m_rendererRegistry.replace<SimpleShaderPixelVariables>(entity, buf_ps.shaderValid, buf_ps.shaderBlob, buf_ps.ConstantBuffer, buf_ps.constantBufferCount);
 		m_rendererRegistry.remove<SimpleShaderPixelVariables>(entity);
+		m_rendererRegistry.destroy(entity);
+	}
+
+	auto meshvars = m_rendererRegistry.view<MeshRenderVars>();
+
+	for (auto entity : meshvars)
+	{
+		auto mesh_vars = meshvars.get<MeshRenderVars>(entity);
+
+		mesh_vars.ib = 0;
+		mesh_vars.ib->Release();
+		mesh_vars.vb = 0;
+		mesh_vars.vb->Release();
+
+		m_rendererRegistry.replace<MeshRenderVars>(entity, mesh_vars.vb, mesh_vars.ib, mesh_vars.numIndices);
+		m_rendererRegistry.remove<MeshRenderVars>(entity);
 		m_rendererRegistry.destroy(entity);
 	}
 

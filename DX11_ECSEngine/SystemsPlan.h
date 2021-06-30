@@ -47,7 +47,7 @@ public:
 
 	// entt::registry& InitTexture(entt::registry& registry);
 
-	void RunDXCore(entt::registry& registry);
+	void RunDXCore(entt::registry& registry, GameEntities* obj_MeshBoneData);
 
 	// GameEntities* e_gameObj = new GameEntities();
 };

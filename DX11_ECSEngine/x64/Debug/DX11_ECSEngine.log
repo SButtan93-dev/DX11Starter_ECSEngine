@@ -1,0 +1,12 @@
+﻿  GameEntities.cpp
+G:\Engine\New folder\DX11Starter_ECSEngine\DX11_ECSEngine\GameEntities.cpp(197,49): warning C4267: '=': conversion from 'size_t' to 'UINT', possible loss of data
+G:\Engine\New folder\DX11Starter_ECSEngine\DX11_ECSEngine\GameEntities.cpp(210,55): warning C4267: '=': conversion from 'size_t' to 'UINT', possible loss of data
+G:\Engine\New folder\DX11Starter_ECSEngine\DX11_ECSEngine\GameEntities.cpp(222,39): warning C4267: '=': conversion from 'size_t' to 'int', possible loss of data
+G:\Engine\New folder\DX11Starter_ECSEngine\DX11_ECSEngine\GameEntities.cpp(272,20): warning C4018: '<': signed/unsigned mismatch
+G:\Engine\New folder\DX11Starter_ECSEngine\DX11_ECSEngine\GameEntities.cpp(297,21): warning C4018: '<': signed/unsigned mismatch
+G:\Engine\New folder\DX11Starter_ECSEngine\DX11_ECSEngine\GameEntities.cpp(421,49): warning C4267: '=': conversion from 'size_t' to 'UINT', possible loss of data
+G:\Engine\New folder\DX11Starter_ECSEngine\DX11_ECSEngine\GameEntities.cpp(433,55): warning C4267: '=': conversion from 'size_t' to 'UINT', possible loss of data
+G:\Engine\New folder\DX11Starter_ECSEngine\DX11_ECSEngine\GameEntities.cpp(443,39): warning C4267: '=': conversion from 'size_t' to 'int', possible loss of data
+G:\Engine\New folder\DX11Starter_ECSEngine\DX11_ECSEngine\GameEntities.cpp(571,23): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
+G:\Engine\New folder\DX11Starter_ECSEngine\DX11_ECSEngine\GameEntities.cpp(574,22): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
+  DX11_ECSEngine.vcxproj -> G:\Engine\New folder\DX11Starter_ECSEngine\x64\Debug\DX11_ECSEngine.exe

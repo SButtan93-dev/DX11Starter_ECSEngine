@@ -46,9 +46,10 @@ public:
 	//  - OS-level messages coming in from Windows itself
 	//  - Calling update & draw back and forth, forever
 	// --------------------------------------------------------
-	HRESULT MainRunDX(entt::registry& registry, ISimpleShader* obj_shaderClass, SkyShader* obj_SkyShader);
+	HRESULT MainRunDX(entt::registry& registry, ISimpleShader* obj_shaderClass, SkyShader* obj_SkyShader, GameEntities* obj_BoneDatMesh);
 
 	void Update(float deltaTime, float totalTime, MeshEntityData* obj_mesh);
+	
 
 	// ---------------------------------------------------------------------------
 	// Supports:
@@ -61,11 +62,11 @@ public:
 	void Draw(RendererMainVars* obj_renderer, ISimpleShader* obj_refShader, 
 		MeshEntityData* obj_mesh, CameraComponents* obj_matrices, SimpleShaderVariables* obj_shaderVars, 
 		SimpleShaderPixelVariables* obj_pixShaderVars, SimpleVertexShaderStruct* obj_vsStruct, 
-		SimplePixelShaderStruct* obj_PSStruct, MeshRenderVars* obj_vbib, entt::registry& registry, TimeData objtime, SkyShader* obj_SkyShader);
+		SimplePixelShaderStruct* obj_PSStruct, MeshRenderVars* obj_vbib, entt::registry& registry, TimeData objtime, SkyShader* obj_SkyShader, GameEntities* obj_BoneDatMesh);
 
 	void DrawSky(entt::registry& registry, RendererMainVars* obj_renderer, ID3D11SamplerState* sampler, SkyShader& obj_SkyShader, CameraComponents* cam_Comp, TextureData* tex_Comp);
 
-	GameEntities Mesh; // systems, no data
+	//GameEntities Mesh; // systems, no data
 	Camera camera;	   // systems, no data
 
 	// Convenience methods for handling mouse input, since we

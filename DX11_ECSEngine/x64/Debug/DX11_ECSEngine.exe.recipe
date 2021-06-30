@@ -1,0 +1,24 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project>
+  <ProjectOutputs>
+    <ProjectOutput>
+      <FullPath>G:\Engine\New folder\DX11Starter_ECSEngine\x64\Debug\DX11_ECSEngine.exe</FullPath>
+    </ProjectOutput>
+  </ProjectOutputs>
+  <ContentFiles>
+    <ContentFile>
+      <FullPath>G:\Engine\New folder\DX11Starter_ECSEngine\x64\Debug\PixelShader.cso</FullPath>
+    </ContentFile>
+    <ContentFile>
+      <FullPath>G:\Engine\New folder\DX11Starter_ECSEngine\x64\Debug\SkyPS.cso</FullPath>
+    </ContentFile>
+    <ContentFile>
+      <FullPath>G:\Engine\New folder\DX11Starter_ECSEngine\x64\Debug\SkyVS.cso</FullPath>
+    </ContentFile>
+    <ContentFile>
+      <FullPath>G:\Engine\New folder\DX11Starter_ECSEngine\x64\Debug\VertexShader.cso</FullPath>
+    </ContentFile>
+  </ContentFiles>
+  <SatelliteDlls />
+  <NonRecipeFileRefs />
+</Project>

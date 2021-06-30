@@ -81,9 +81,9 @@ void SystemsPlan::CameraUpdate(CameraComponents* comps, float dt, entt::registry
 // ---------------------------
 // Enter the main loop system
 // ---------------------------
-void SystemsPlan::RunDXCore(entt::registry & registry)
+void SystemsPlan::RunDXCore(entt::registry & registry, GameEntities* obj_MeshBoneData)
 {
-	DXCore::DXCoreInstance->MainRunDX(registry, s_ShaderObj, sky_obj);
+	DXCore::DXCoreInstance->MainRunDX(registry, s_ShaderObj, sky_obj,obj_MeshBoneData);
 }
 
 

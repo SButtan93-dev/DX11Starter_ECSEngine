@@ -11,6 +11,7 @@
 #include <vector>
 #include <string>
 
+//#define NUM_BONES_PER_VEREX 4
 
 // -------------------------------------------------
 // Contains info about a single Sampler in a shader
@@ -378,6 +379,8 @@ struct Vertex
 	DirectX::XMFLOAT3 Position;	    // The position of the vertex
 	DirectX::XMFLOAT2 UV;           // UV Coordinate for texturing 
 	DirectX::XMFLOAT3 Normal;       // Normal for lighting
+	DirectX::XMINT4 BoneIDs;
+	DirectX::XMFLOAT4 Weights;
 };
 
 
@@ -409,6 +412,16 @@ struct MeshEntityDataSky
 };
 
 
+struct VertexBoneData2
+{
+	DirectX::XMINT4 IDs;
+	DirectX::XMFLOAT4 Weights;
+};
+//
+//struct VertexBoneData
+//{
+//	std::vector<VertexBoneData2*> IDs;
+//};
 // -------------------
 // Texture resources
 // -------------------
