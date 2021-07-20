@@ -2,9 +2,12 @@
 #include <Windows.h>
 #include <d3d11.h>
 #include <string>
+#include <map> 
 #include <d3dcompiler.h>
 #include <DirectXMath.h>
-
+#include "assimp/Importer.hpp"
+#include "Assimp/assimp/scene.h"
+#include "Assimp/assimp/postprocess.h"
 #pragma comment(lib, "d3d11.lib")
 
 #include <unordered_map>
@@ -299,29 +302,6 @@ struct MeshRenderVars
 };
 
 
-//// Animation stuff
-//struct aiNode
-//{
-//	std::string name;
-//	DirectX::XMFLOAT4X4 Transformation;
-//	aiNode* Parent;
-//	aiNode* child;
-//};
-//
-//struct aiNodeAnim
-//{
-//	std::string name;
-//	DirectX::XMFLOAT3 positions;
-//	aiQuaternion rotations;
-//	DirectX::XMFLOAT3 scale;
-//
-//};
-//
-//struct aiAnimation
-//{
-//	double duration;
-//	double TicksPerSecond
-//};
 // Sky mesh
 // ---------------------------------------------
 // Store mesh buffers after loading into device.
@@ -412,16 +392,33 @@ struct MeshEntityDataSky
 };
 
 
-struct VertexBoneData2
+struct VertexBoneData
 {
-	DirectX::XMINT4 IDs;
-	DirectX::XMFLOAT4 Weights;
+	unsigned int IDs[6];
+	float Weights[6];
+	//void AddBoneData(UINT BoneID, float Weight);
+
 };
-//
-//struct VertexBoneData
-//{
-//	std::vector<VertexBoneData2*> IDs;
-//};
+
+// --------------
+// Bone resoures
+// - 
+// --------------
+struct BoneInfo
+{
+	DirectX::XMMATRIX BoneOffset;
+	DirectX::XMMATRIX FinalTransformation;
+
+};
+struct MeshBoneData
+{
+	std::map<std::string, UINT> mBoneMapping; // maps a bone name to its index
+	std::vector<BoneInfo> mBoneInfo; 
+	UINT mNumBones;
+	DirectX::XMMATRIX GlobalInverseTransform;
+};
+
+
 // -------------------
 // Texture resources
 // -------------------

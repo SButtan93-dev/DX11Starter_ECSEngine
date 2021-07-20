@@ -2,11 +2,8 @@
 // DirectX Tool Kit headers
 #include "WICTextureLoader.h" // WIC = Windows Imaging Component
 
-float pos_xz = 5.0f;
-
-float pos_y = -2.0f;
 Vertex vertex;
-VertexBoneData2 temp_bone_data;
+int count = 0; // count vertices
 
 GameEntities::GameEntities()
 {
@@ -27,56 +24,31 @@ void GameEntities::VertexBoneData::AddBoneData(UINT BoneID, float Weight)
 		{
 			IDs[i] = BoneID;
 			Weights[i] = Weight;
-
-			if (i == 0)
-			{
-				//verts2.push_back()
-				//temp_bone_data.IDs.x = BoneID;
-				//temp_bone_data.Weights.x = Weight;
-			}
-			else if (i == 1)
-			{
-				//temp_bone_data.IDs.y = BoneID;
-				//temp_bone_data.Weights.y = Weight;
-			}
-			else if (i == 2)
-			{
-				//temp_bone_data.IDs.z = BoneID;
-				//temp_bone_data.Weights.z = Weight;
-			}
-			else if (i == 3)
-			{
-				//temp_bone_data.IDs.w = BoneID;
-				//temp_bone_data.Weights.w = Weight;
-			}
-			
-			//verts2.push_back();
-			//verts->push_back(vertex);
-
 			return;
 		}
-
 	}
 
 	// should never get here - more bones than we have space for
 	assert(0);
-	//return;
 }
 
 
-// -----------------------------------------------------------------------
-// - Iterate 'n' times through all entities having the two mesh components.
-// - Store vb, ib, and indices after reading from the obj file.
-// - Assimp for model loading. Need to add animation.
-// -----------------------------------------------------------------------
+// ---------------------------------------------------------------------------------
+// - Iterate 'n' times through all entities having the mesh components.
+// - Store vb, ib, and indices after reading from the fbx file including bones data.
+// - Assimp model loading with animation.
+// ---------------------------------------------------------------------------------
 void GameEntities::LoadMesh(const char* objFile, entt::registry& registry)
 {
-
 	auto new_MeshEntity = registry.create();
-	auto mycompMesh = registry.view<MeshEntityData, MeshRenderVars>(); // mesh
+	auto mycompMesh = registry.view<MeshEntityData, MeshRenderVars, MeshBoneData>(); // mesh
 
-	for (auto [entity, obj_MeshEntityDefault, mesh_comp] : mycompMesh.each()) 
+	// positions
+	int x = 0, y = 0, z = 0;
+	for (auto [entity, obj_MeshEntityDefault, mesh_comp, mesh_Bone] : mycompMesh.each()) 
 	{
+
+		count = 0;
 
 		new_MeshEntity = entity;
 
@@ -86,23 +58,23 @@ void GameEntities::LoadMesh(const char* objFile, entt::registry& registry)
 		std::vector<DirectX::XMFLOAT2> uvs;           // UVs from the file
           // Verts we're assembling
 		std::vector<UINT> indices;           // Indices of these verts
+		std::vector<VertexBoneData> Bones;	 // Mesh bones
 
+		std::vector<Vertex> verts;
 		// Open Assimp to load the file. Create object.
-		
+		//Assimp::Importer importer;
 
 		// Triangulate- convert corner points to vertices, 
 		// ConvertToLeftHanded- convert to dx format (default OpenGL format), 
 		// FlipUVs-for dx format 
-		 pScene = importer.ReadFile(objFile,
+		pScene = importer.ReadFile(objFile,
 			aiProcess_Triangulate |
 			aiProcess_FlipWindingOrder |
 			aiProcess_FlipUVs |
 			aiProcess_MakeLeftHanded);
 
-		// 1 mesh for now
+		// Get mesh from Assimp
 		aiMesh* mesh = pScene->mMeshes[0];
-
-		// Vertex vertex;
 
 		// Calculate the indices
 		for (UINT c = 0; c < mesh->mNumFaces; c++)
@@ -111,15 +83,7 @@ void GameEntities::LoadMesh(const char* objFile, entt::registry& registry)
 				indices.push_back(mesh->mFaces[c].mIndices[e]);
 			}
 
-		aiMatrix4x4 offset = pScene->mRootNode->mTransformation;
-		GlobalInverseTransform = DirectX::XMMATRIX(offset.a1, offset.a2, offset.a3, offset.a4,
-				offset.b1, offset.b2, offset.b3, offset.b4,
-				offset.c1, offset.c2, offset.c3, offset.c4,
-				offset.d1, offset.d2, offset.d3, offset.d4);
-
-		GlobalInverseTransform = DirectX::XMMatrixInverse(nullptr, GlobalInverseTransform);
-
-		//store the positions, normals, uvs and push it in struct buffer 'verts'. Track 'vertCounter'.
+		// store the positions, normals, uvs and push it in struct buffer 'verts'. Track 'vertCounter'
 		for (UINT i = 0; i < mesh->mNumVertices; i++)
 		{
 			vertex.Position.x = mesh->mVertices[i].x;
@@ -134,18 +98,23 @@ void GameEntities::LoadMesh(const char* objFile, entt::registry& registry)
 			vertex.UV.y = mesh->mTextureCoords[0][i].y;
 
 			verts.push_back(vertex);
-			//verts.at(i).Position.x = vertex.Position.x;
-			//verts.at(i).Position.y = vertex.Position.y;
+
+			count++;
 		}
 
-		LoadBones(mesh);
+		// Animation 
+		LoadBones(mesh, &Bones, &mesh_Bone);
 
-		//unsigned int IDs2[NUM_BONES_PER_VEREX];
-		//float Weights2[NUM_BONES_PER_VEREX];
-		
+		aiMatrix4x4 offset = pScene->mRootNode->mTransformation;
+		mesh_Bone.GlobalInverseTransform = DirectX::XMMATRIX(offset.a1, offset.a2, offset.a3, offset.a4,
+			offset.b1, offset.b2, offset.b3, offset.b4,
+			offset.c1, offset.c2, offset.c3, offset.c4,
+			offset.d1, offset.d2, offset.d3, offset.d4);
+
+		mesh_Bone.GlobalInverseTransform = DirectX::XMMatrixInverse(nullptr, mesh_Bone.GlobalInverseTransform);
+
 		for (unsigned int k = 0; k < Bones.size(); k++)
 		{
-
 				verts.at(k).BoneIDs.x = Bones[k].IDs[0];
 				verts.at(k).BoneIDs.y = Bones[k].IDs[1];
 				verts.at(k).BoneIDs.z = Bones[k].IDs[2];
@@ -155,36 +124,21 @@ void GameEntities::LoadMesh(const char* objFile, entt::registry& registry)
 				verts.at(k).Weights.y = Bones[k].Weights[1];
 				verts.at(k).Weights.z = Bones[k].Weights[2];
 				verts.at(k).Weights.w = Bones[k].Weights[3];
-
-			
 		}
 
-		// Use tag?
-		//auto vbib_comp = registry.view<MeshRenderVars, entt::tag<"VbIb"_hs>>();
-
-		// Set up mesh transforms
-		DirectX::XMStoreFloat4x4(&obj_MeshEntityDefault.worldMatrix, DirectX::XMMatrixIdentity());
-
-		if (pos_xz > 80.0f)
+		DirectX::XMStoreFloat4x4(&obj_MeshEntityDefault.worldMatrix, DirectX::XMMatrixIdentity()); 
+		if (x == 80)
 		{
-			obj_MeshEntityDefault.position = DirectX::XMFLOAT3(pos_xz, pos_y, pos_xz + 2.0f);
-			pos_y += 1.0f;
-			pos_xz = 5.0f;
+			x = 0;
+			z+=2;
 		}
-		else
-		{
-			obj_MeshEntityDefault.position = DirectX::XMFLOAT3(pos_xz, pos_y, pos_xz + 2.0f);
-			pos_xz += 1.0f;
-		}
-
+		obj_MeshEntityDefault.position = DirectX::XMFLOAT3(x,y,z);
+		x+=2;
 		obj_MeshEntityDefault.rotation = DirectX::XMFLOAT3(0.0f,0.0f, 0.0f);
 		obj_MeshEntityDefault.scale = DirectX::XMFLOAT3(1.0f, 1.0f, 1.0f);
 
 		// GPU comp vars for storing the vb and ib.
 		auto m_comp = registry.view<RendererMainVars>();
-
-		// Do we have this vb,ib & indices component in the registry?
-		//auto mesh_comp = registry.get<MeshRenderVars>(new_MeshEntity);
 
 		// Store vertex buffer, index buffer & indices.
 		for (auto entity : m_comp)
@@ -194,136 +148,94 @@ void GameEntities::LoadMesh(const char* objFile, entt::registry& registry)
 
 			D3D11_BUFFER_DESC vbd;
 			vbd.Usage = D3D11_USAGE_IMMUTABLE;
-			vbd.ByteWidth = sizeof(Vertex) * verts.size(); // Number of vertices
+			vbd.ByteWidth = sizeof(Vertex) * count; // Number of vertices
 			vbd.BindFlags = D3D11_BIND_VERTEX_BUFFER;
 			vbd.CPUAccessFlags = 0;
 			vbd.MiscFlags = 0;
 			vbd.StructureByteStride = 0;
 			D3D11_SUBRESOURCE_DATA initialVertexData;
 			initialVertexData.pSysMem = &verts[0];
+
 			mycomp.device->CreateBuffer(&vbd, &initialVertexData, &mesh_comp.vb);
 
 
 			// Create the index buffer
 			D3D11_BUFFER_DESC ibd;
 			ibd.Usage = D3D11_USAGE_IMMUTABLE;
-			ibd.ByteWidth = sizeof(unsigned int) * verts.size(); // Number of indices
+			ibd.ByteWidth = sizeof(unsigned int) * count; // Number of indices
 			ibd.BindFlags = D3D11_BIND_INDEX_BUFFER;
 			ibd.CPUAccessFlags = 0;
 			ibd.MiscFlags = 0;
 			ibd.StructureByteStride = 0;
 			D3D11_SUBRESOURCE_DATA initialIndexData;
 			initialIndexData.pSysMem = &indices[0];
-			//  mesh_comp.ib = 0;
-			//	mesh_comp.ib->Release();
+
 			mycomp.device->CreateBuffer(&ibd, &initialIndexData, &mesh_comp.ib);
 
 			// Save the indices
-			mesh_comp.numIndices = verts.size();
+			mesh_comp.numIndices = count;
 
 			// Tell the input assembler stage of the pipeline what kind of
 			// geometric primitives (points, lines or triangles) we want to draw.  
 			// Essentially: "What kind of shape should the GPU draw with our data?"
 			mycomp.context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
-
-			//D3D11_BUFFER_DESC vbd2;
-			//vbd2.Usage = D3D11_USAGE_IMMUTABLE;
-			//vbd2.ByteWidth = sizeof(VertexBoneData2) * verts.size(); // Number of vertices
-			//vbd2.BindFlags = D3D11_BIND_VERTEX_BUFFER;
-			//vbd2.CPUAccessFlags = 0;
-			//vbd2.MiscFlags = 0;
-			//vbd2.StructureByteStride = 0;
-			//D3D11_SUBRESOURCE_DATA initialVertexData;
-			//initialVertexData.pSysMem = &verts[0];
-			//mycomp.device->CreateBuffer(&vbd, &initialVertexData, &mesh_comp.vb);
-
-			//// Create the index buffer
-			//D3D11_BUFFER_DESC ibd2;
-			//ibd2.Usage = D3D11_USAGE_IMMUTABLE;
-			//ibd2.ByteWidth = sizeof(unsigned int) * verts.size(); // Number of indices
-			//ibd2.BindFlags = D3D11_BIND_INDEX_BUFFER;
-			//ibd2.CPUAccessFlags = 0;
-			//ibd2.MiscFlags = 0;
-			//ibd2.StructureByteStride = 0;
-			//D3D11_SUBRESOURCE_DATA initialIndexData;
-			//initialIndexData.pSysMem = &indices[0];
-			////  mesh_comp.ib = 0;
-			////	mesh_comp.ib->Release();
-			//mycomp.device->CreateBuffer(&ibd, &initialIndexData, &mesh_comp.ib);
-
 			// replace the components back to the registry with this entity
 			registry.replace<RendererMainVars>(entity, mycomp.swapChain, mycomp.device, mycomp.context, mycomp.backBufferRTV, mycomp.depthStencilView);
 			registry.replace<MeshRenderVars>(new_MeshEntity, mesh_comp.vb, mesh_comp.ib, mesh_comp.numIndices);
 		}
 
+		registry.replace<MeshBoneData>(new_MeshEntity, mesh_Bone.mBoneMapping, mesh_Bone.mBoneInfo, mesh_Bone.mNumBones, mesh_Bone.GlobalInverseTransform);
 		registry.replace<MeshEntityData>(new_MeshEntity, obj_MeshEntityDefault.worldMatrix, obj_MeshEntityDefault.position, obj_MeshEntityDefault.rotation
 			, obj_MeshEntityDefault.scale);
-
 	}
-
 }
 
-
-void GameEntities::LoadBones(aiMesh* mesh)
+// ----------------------------------------------------------------------------------------------------
+// - mBoneMapping - match BoneName from instantiated pScene
+// - mBoneInfo - Store aiMatrx into XMMATRIX
+// - Store ID and Weight for each Bone and later attach to components of the system
+// - Number of Bones attached to each vertex may vary with each mesh but for now it is 1 single mesh 
+// ----------------------------------------------------------------------------------------------------
+void GameEntities::LoadBones(aiMesh* mesh, std::vector<VertexBoneData>* BonesData, MeshBoneData* BoneData_ECS)
 {
-	Bones.resize(mesh->mNumVertices);
-
+	
+	BonesData->resize(mesh->mNumVertices);
 	for (int i = 0; i < mesh->mNumBones; i++)
 	{
 		int BoneIndex = 0;
 		std::string BoneName(mesh->mBones[i]->mName.data);
 
-		if (mBoneMapping.find(BoneName) == mBoneMapping.end())
+		if (BoneData_ECS->mBoneMapping.find(BoneName) == BoneData_ECS->mBoneMapping.end())
 		{
-			BoneIndex = mNumBones;
-			mNumBones++;
+			BoneIndex = BoneData_ECS->mNumBones;
+			BoneData_ECS->mNumBones++;
 			BoneInfo bi;
-			mBoneInfo.push_back(bi);
+			BoneData_ECS->mBoneInfo.push_back(bi);
 		}
 		else
 		{
-			BoneIndex = mBoneMapping[BoneName];
+			BoneIndex = BoneData_ECS->mBoneMapping[BoneName];
 		}
 		aiMatrix4x4 offset = mesh->mBones[i]->mOffsetMatrix;
-		//DirectX::XMMatrixTranspose(temp);
+
 		DirectX::XMMATRIX meshToBoneTransform = DirectX::XMMATRIX(offset.a1, offset.a2, offset.a3, offset.a4,
 				offset.b1, offset.b2, offset.b3, offset.b4,
 				offset.c1, offset.c2, offset.c3, offset.c4,
 				offset.d1, offset.d2, offset.d3, offset.d4);
-		mBoneInfo[BoneIndex].BoneOffset = meshToBoneTransform;
-		mBoneMapping[BoneName] = BoneIndex;
+		BoneData_ECS->mBoneInfo[BoneIndex].BoneOffset = meshToBoneTransform;
+		BoneData_ECS->mBoneMapping[BoneName] = BoneIndex;
 
 		for (int x = 0; x < mesh->mBones[i]->mNumWeights; x++)
 		{
 			int VertexID = mesh->mBones[i]->mWeights[x].mVertexId;
 			float Weight = mesh->mBones[i]->mWeights[x].mWeight;
 
-			//AddBoneData2(BoneIndex, Weight, VertexID);
-
-					Bones[VertexID].AddBoneData(BoneIndex, Weight);
-					
-			// AddBoneData(BoneIndex, Weight, x);
+			BonesData->at(VertexID).AddBoneData(BoneIndex, Weight);
 		}
 	}
-
 }
 
-
-//void GameEntities::AddBoneData2(UINT BoneID, float Weight, int vID)
-//{
-//	for (UINT j = 0; j < 4; j++) {
-//		if (verts.at(vID).Weights.x == 0.0) {
-//			verts.at(vID).IDs.x = BoneID;
-//			verts.at(vID).Weights.x = Weight;
-//
-//			return;
-//		}
-//
-//		// should never get here - more bones than we have space for
-//		//assert(0);
-//	}
-//}
 
 
 // -----------------------------------------------------------------------
@@ -339,7 +251,7 @@ void GameEntities::LoadMeshSky(const char* objFile, entt::registry& registry)
 
 	for (auto entity : mycompMesh)
 	{
-
+		count = 0;
 		new_MeshEntity = entity;
 
 		// Variables used while reading the file
@@ -381,6 +293,8 @@ void GameEntities::LoadMeshSky(const char* objFile, entt::registry& registry)
 			vertex.UV.y = mesh->mTextureCoords[0][i].y;
 
 			verts.push_back(vertex);
+
+			count++;
 		}
 
 		// Calculate the indices
@@ -390,16 +304,11 @@ void GameEntities::LoadMeshSky(const char* objFile, entt::registry& registry)
 				indices.push_back(mesh->mFaces[c].mIndices[e]);
 			}
 
-		// Use tag?
-		//auto vbib_comp = registry.view<MeshRenderVars, entt::tag<"VbIb"_hs>>();
-
 		// Local mesh properties
 		MeshEntityDataSky obj_MeshEntityDefault;
 
 		// Set up mesh transforms
 		DirectX::XMStoreFloat4x4(&obj_MeshEntityDefault.worldMatrix, DirectX::XMMatrixIdentity());
-
-
 		obj_MeshEntityDefault.position = DirectX::XMFLOAT3(0.0f,0.0f,0.0f);
 		obj_MeshEntityDefault.rotation = DirectX::XMFLOAT3(0, 0, 0);
 		obj_MeshEntityDefault.scale = DirectX::XMFLOAT3(2.0f, 2.0f, 2.0f);
@@ -418,7 +327,7 @@ void GameEntities::LoadMeshSky(const char* objFile, entt::registry& registry)
 
 			D3D11_BUFFER_DESC vbd;
 			vbd.Usage = D3D11_USAGE_IMMUTABLE;
-			vbd.ByteWidth = sizeof(Vertex) * verts.size(); // Number of vertices
+			vbd.ByteWidth = sizeof(Vertex) * count; // Number of vertices
 			vbd.BindFlags = D3D11_BIND_VERTEX_BUFFER;
 			vbd.CPUAccessFlags = 0;
 			vbd.MiscFlags = 0;
@@ -430,7 +339,7 @@ void GameEntities::LoadMeshSky(const char* objFile, entt::registry& registry)
 			// Create the index buffer
 			D3D11_BUFFER_DESC ibd;
 			ibd.Usage = D3D11_USAGE_IMMUTABLE;
-			ibd.ByteWidth = sizeof(unsigned int) * verts.size(); // Number of indices
+			ibd.ByteWidth = sizeof(unsigned int) * count; // Number of indices
 			ibd.BindFlags = D3D11_BIND_INDEX_BUFFER;
 			ibd.CPUAccessFlags = 0;
 			ibd.MiscFlags = 0;
@@ -440,7 +349,7 @@ void GameEntities::LoadMeshSky(const char* objFile, entt::registry& registry)
 			mycomp.device->CreateBuffer(&ibd, &initialIndexData, &mesh_comp.ib);
 
 			// Save the indices
-			mesh_comp.numIndices = verts.size();
+			mesh_comp.numIndices = count;
 
 			// Tell the input assembler stage of the pipeline what kind of
 			// geometric primitives (points, lines or triangles) we want to draw.  
@@ -486,13 +395,13 @@ void GameEntities::InitTexture(entt::registry& registry)
 		DirectX::CreateWICTextureFromFile(
 			r_comp.device,				// The Direct3D device for resource creation
 			r_comp.context,				// Rendering context (this will auto-generate mip maps!!!)
-			L"Textures/crate.png",		// Path to the file ("L" means wide characters)
+			L"Textures/Stormtrooper_D.png",		// Path to the file ("L" means wide characters)
 			0,							// Texture ref?  No thanks!  (0 means we don't want an extra ref)
 			&t_comp.crateSRV);			// Actual SRV for use with shaders
 
-		DirectX::CreateWICTextureFromFile(r_comp.device, r_comp.context, L"Textures/rusty.jpg", 0, &t_comp.rustSRV);
+		DirectX::CreateWICTextureFromFile(r_comp.device, r_comp.context, L"Textures/Stormtrooper_D.png", 0, &t_comp.rustSRV);
 
-		DirectX::CreateWICTextureFromFile(r_comp.device, r_comp.context, L"Textures/rustySpec.png", 0, &t_comp.specSRV);
+		DirectX::CreateWICTextureFromFile(r_comp.device, r_comp.context, L"Textures/Stormtrooper_D.png", 0, &t_comp.specSRV);
 
 		// Create a sampler state for sampling options
 		D3D11_SAMPLER_DESC sampDesc = {}; // " = {}" fills the whole struct with zeros!
@@ -510,6 +419,7 @@ void GameEntities::InitTexture(entt::registry& registry)
 
 	registry.replace<TextureData>(entityTexture, t_comp.crateSRV, t_comp.rustSRV, t_comp.specSRV, t_comp.sampler);
 }
+
 
 // --------------------------------------------------
 // - Used for test to show that texture components
@@ -548,96 +458,75 @@ void GameEntities::CleanUpTexture(entt::registry& registry)
 	}
 }
 
-// not called... replaced in Draw(), could be called here again
-void GameEntities::UpdateWorldMatrix(MeshEntityData * obj_meshData)
-{
-	DirectX::XMMATRIX trans = DirectX::XMMatrixTranslation(obj_meshData->position.x, obj_meshData->position.y, obj_meshData->position.z);
-	DirectX::XMMATRIX rotX = DirectX::XMMatrixRotationX(obj_meshData->rotation.x);
-	DirectX::XMMATRIX rotY = DirectX::XMMatrixRotationY(obj_meshData->rotation.y);
-	DirectX::XMMATRIX rotZ = DirectX::XMMatrixRotationZ(obj_meshData->rotation.z);
-	DirectX::XMMATRIX sc = DirectX::XMMatrixScaling(obj_meshData->scale.x, obj_meshData->scale.y, obj_meshData->scale.z);
 
-	DirectX::XMMATRIX total = sc * trans;
-	XMStoreFloat4x4(&obj_meshData->worldMatrix, XMMatrixTranspose(total));
-}
-
-
-DirectX::XMMATRIX GameEntities::BoneTransform(float TimeInSeconds, std::vector<DirectX::XMFLOAT4X4>& Transforms)
+// --------------------------------------------------------------------------------------------
+// Called for each mesh having mBoneMapping[index] but for now it is set to a single Transform 
+// passed to a single shader and could be improved by adding more shaders as part of ECS.
+// --------------------------------------------------------------------------------------------
+DirectX::XMMATRIX GameEntities::BoneTransform(float TimeInSeconds, std::vector<DirectX::XMFLOAT4X4>& Transforms, MeshBoneData * mesh_BoneData)
 {
 	DirectX::XMMATRIX Identity = DirectX::XMMatrixIdentity();
-	//Identity.InitIdentity();
-	//DirectX::XMFLOAT4X4 abc;
-	//DirectX::XMStoreFloat4x4(&abc, Identity);
+
 	float TicksPerSecond = pScene->mAnimations[0]->mTicksPerSecond != 0 ?
 		pScene->mAnimations[0]->mTicksPerSecond : 30.0f;
 	float TimeInTicks = TimeInSeconds * TicksPerSecond;
 	float AnimationTime = fmod(TimeInTicks, pScene->mAnimations[0]->mDuration);
 
-	ReadNodeHeirarchy(AnimationTime, pScene->mRootNode, Identity);
+	ReadNodeHeirarchy(AnimationTime, pScene->mRootNode, Identity, mesh_BoneData);
 
-	Transforms.resize(mNumBones);
+	Transforms.resize(mesh_BoneData->mNumBones);
 
-	for (UINT i = 0; i < mNumBones; i++) {
-		//DirectX::XMFLOAT4X4 temp2;
-		//DirectX::XMStoreFloat4x4(&temp2, mBoneInfo[i].FinalTransformation);
+	for (UINT i = 0; i < mesh_BoneData->mNumBones; i++) {
 
-		//DirectX::XMMatrixTranspose(mBoneInfo[i].FinalTransformation);
-
-		DirectX::XMStoreFloat4x4(&Transforms[i], mBoneInfo[i].FinalTransformation);
-		//Transforms[i] = 
-		//Transforms = mBoneInfo[i].FinalTransformation;
+		DirectX::XMStoreFloat4x4(&Transforms[i], mesh_BoneData->mBoneInfo[i].FinalTransformation);
 	}
 
 	return Identity;
 }
 
-
-void GameEntities::ReadNodeHeirarchy(float AnimationTime, const aiNode* pNode, const DirectX::XMMATRIX& ParentTransform)
+// ---------------------------------------------------------------------------------------------------------------
+// - Called recursively till all the mBoneMappin[index].FinalTransform components are calculated
+// - All The calculation upto this point is based on Assimp matrices coordination and converstion of S * R * T
+//   needs Transpose to match DirectX Left Hand Coordinate system
+// ---------------------------------------------------------------------------------------------------------------
+void GameEntities::ReadNodeHeirarchy(float AnimationTime, const aiNode* pNode, const DirectX::XMMATRIX& ParentTransform, MeshBoneData* mesh_BoneData)
 {
 	std::string NodeName(pNode->mName.data);
-	const aiAnimation* pAnim = pScene->mAnimations[0];
-
-	NodeTransformation = DirectX::XMMATRIX(&pNode->mTransformation.a1);
-	//I just read aiMatrix4x4 (aiMatrix to XMMATRIX format)
+	aiAnimation* pAnim = pScene->mAnimations[0];
+	DirectX::XMMATRIX NodeTransformation = DirectX::XMMATRIX(&pNode->mTransformation.a1);
 	const aiNodeAnim* pNodeAnim = FindNodeAnim(pAnim, NodeName);
-
-	DirectX::XMMATRIX anim = DirectX::XMMatrixIdentity();
-	if (pNodeAnim) {
+	
+	if (pNodeAnim) 
+	{
 		aiVector3D s;
 		CalcInterpolatedScaling(s, AnimationTime, pNodeAnim);
 		DirectX::XMMATRIX ScalingM = DirectX::XMMatrixScaling(s.x, s.y, s.z);
-
 
 		aiQuaternion q;
 		CalcInterpolatedRotation(q, AnimationTime, pNodeAnim);
 		DirectX::XMMATRIX RotationM = DirectX::XMMatrixRotationQuaternion(DirectX::XMVectorSet(q.x, q.y, q.z, q.w));
 
-
 		aiVector3D t;
 		CalcInterpolatedPosition(t, AnimationTime, pNodeAnim);
 		DirectX::XMMATRIX TranslationM = DirectX::XMMatrixTranslation(t.x, t.y, t.z);
 
-
-
+		// S*R*T for DX11
 		NodeTransformation = ScalingM * RotationM * TranslationM;
 		NodeTransformation = XMMatrixTranspose(NodeTransformation);
-		//I applied transpos
 	}
-
 
 	DirectX::XMMATRIX GlobalTransformation = ParentTransform * NodeTransformation;
 
-	if (mBoneMapping.find(NodeName) != mBoneMapping.end()) {
-		UINT BoneIndex = mBoneMapping[NodeName];
-		mBoneInfo[BoneIndex].FinalTransformation = GlobalInverseTransform * GlobalTransformation * mBoneInfo[BoneIndex].BoneOffset;
-		//mBoneInfo[BoneIndex].FinalTransformation = XMMatrixTranspose(mBoneInfo[BoneIndex].FinalTransformation);
+	if (mesh_BoneData->mBoneMapping.find(NodeName) != mesh_BoneData->mBoneMapping.end()) {
+		UINT BoneIndex = mesh_BoneData->mBoneMapping[NodeName];
+		mesh_BoneData->mBoneInfo[BoneIndex].FinalTransformation = mesh_BoneData->GlobalInverseTransform * GlobalTransformation * mesh_BoneData->mBoneInfo[BoneIndex].BoneOffset;
 	}
-
 
 	for (UINT i = 0; i < pNode->mNumChildren; ++i) {
 
-		ReadNodeHeirarchy(AnimationTime, pNode->mChildren[i], GlobalTransformation);
+		ReadNodeHeirarchy(AnimationTime, pNode->mChildren[i], GlobalTransformation, mesh_BoneData);
 	}
+
 }
 
 const aiNodeAnim* GameEntities::FindNodeAnim(const aiAnimation* pAnimation, const std::string NodeName)

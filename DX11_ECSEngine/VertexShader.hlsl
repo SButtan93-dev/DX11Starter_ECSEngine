@@ -36,34 +36,21 @@ VertexToPixel main(VertexShaderInput input)
 	// Set up output
 	VertexToPixel output;
 
-	//float abc2 = Weights.x;
-	//float abc3 = BoneData._11;
-
-	// Calculate output position
-
-	//output.normal.x = BoneData[0]._11;
-	//output.normal.y = BoneData[0]._21;
-	//output.normal.z = BoneData[0]._31;
-
-	matrix abc = mul(input.Weights.x, BoneData[input.BoneIDs.x]);
-	abc = abc + mul(input.Weights.y, BoneData[input.BoneIDs.y]);
-	abc = abc + mul(input.Weights.z, BoneData[input.BoneIDs.z]);
-	abc = abc + mul(input.Weights.w, BoneData[input.BoneIDs.w]);
-
-
-	//matrix worldViewProj = mul(mul(world, view), projection);
-	//output.position = mul(float4(input.position, 1.0f), worldViewProj);
+	matrix BoneTransform = mul(input.Weights.x, BoneData[input.BoneIDs.x]);
+	BoneTransform = BoneTransform + mul(input.Weights.y, BoneData[input.BoneIDs.y]);
+	BoneTransform = BoneTransform + mul(input.Weights.z, BoneData[input.BoneIDs.z]);
+	BoneTransform = BoneTransform + mul(input.Weights.w, BoneData[input.BoneIDs.w]);
 
 	matrix worldViewProj = mul(mul(world, view), projection);
-	float4 temp = mul(float4(input.position, 1.0f), abc);
-	output.position = mul(temp, worldViewProj);
+	float4 PosL = mul(float4(input.position, 1.0f), BoneTransform);
+	output.position = mul(PosL, worldViewProj);
 
 	// Calculate the world position for this vertex
-	output.worldPos = mul(temp, world).xyz;
+	output.worldPos = mul(PosL, world).xyz;
 
-	float4 temp2 = mul(float4(input.normal, 1.0f), abc);
+	float4 NormL = mul(float4(input.normal, 0.0f), BoneTransform);
 	// Transform the normal using the world matrix
-	output.normal = mul(temp2, (float3x3)world);
+	output.normal = mul(NormL, (float3x3)world);
 
 	// Remember to normalize the normal since it's probably also scaled
 	output.normal = normalize(output.normal);

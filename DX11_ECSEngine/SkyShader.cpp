@@ -68,7 +68,7 @@ SkyShader::~SkyShader()
 //
 // Returns true if shader is created correctly, false otherwise
 // --------------------------------------------------------
-bool SkyShader::CreateShaderSky(entt::registry& registry)
+bool SkyShader::CreateVertexShaderSky(entt::registry& registry)
 {
 
 	auto s_mainShaderComp = registry.view<RendererMainVars>();
@@ -216,7 +216,7 @@ bool SkyShader::CreateShaderSky(entt::registry& registry)
 //
 // Returns true if shader is created correctly, false otherwise
 // --------------------------------------------------------
-bool SkyShader::CreateShaderPixelSky(entt::registry& registry)
+bool SkyShader::CreatePixelShaderSky(entt::registry& registry)
 {
 	entt::entity gpu_main;
 
@@ -349,10 +349,10 @@ void SkyShader::SetSkyVars(entt::registry& registry)
 //
 // shaderFile - A "wide string" specifying the compiled shader to load
 // -----------------------------------------------------------------------------------------
-entt::registry& SkyShader::LoadShaderFileSky(entt::registry& registry)
+entt::registry& SkyShader::LoadVertexShaderFileSky(entt::registry& registry)
 {
 
-	bool checkLoadShader = CreateShaderSky(ReadFileToBlob_VertexSky(registry));
+	bool checkLoadShader = CreateVertexShaderSky(ReadFileToBlob_VertexSky(registry));
 
 	auto d_component = registry.view<RendererMainVars>();
 
@@ -503,7 +503,7 @@ entt::registry& SkyShader::LoadShaderFileSky(entt::registry& registry)
 entt::registry& SkyShader::LoadPixelShaderFileSky(entt::registry& registry)
 {
 
-	bool checkLoadShader = CreateShaderPixelSky(ReadFileToBlob_PixelSky(registry));
+	bool checkLoadShader = CreatePixelShaderSky(ReadFileToBlob_PixelSky(registry));
 
 	auto d_component = registry.view<RendererMainVars>();
 
@@ -649,7 +649,7 @@ entt::registry& SkyShader::LoadPixelShaderFileSky(entt::registry& registry)
 // data - The data to set in the buffer
 // size - The size of the data (this must match the variable's size)
 // -------------------------------------------------------------------
-void SkyShader::SetData(std::string name, const void* data, unsigned int size)
+void SkyShader::SetDataVertex(std::string name, const void* data, unsigned int size)
 {
 	// Look for the variable and verify
 	SimpleShaderVariable* var = FindVariable(name, size);

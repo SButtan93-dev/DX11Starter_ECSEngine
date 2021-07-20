@@ -16,15 +16,10 @@ SystemsPlan::SystemsPlan()
 
 SystemsPlan::~SystemsPlan()
 {
-	//delete e_gameObj;
-
 	delete s_ShaderObj;
 
 	delete sky_obj;
 
-	//DXCore::DXCoreInstance->~DXCore();
-	//s_ShaderObj.s_shaderVecs->constantBuffers->ConstantBuffer->Release();
-	//s_ShaderObj.s_shaderVecsPixel.constantBuffers->ConstantBuffer->Release();
 }
 
 
@@ -44,19 +39,7 @@ void SystemsPlan::StartWindow(entt::registry &m_mainRendererRegistry)
 void SystemsPlan::InitDirectXVars(entt::registry& registry)
 {
 	DXCore::DXCoreInstance->InitDirectX(registry);
-	//GameEntities::Entities->InitVBIB();
 }
-
-
-// ------------------------------------------------------------------------
-// More of a high level function to return the updated components from DXCore.
-// Includes device, context, swapchain, depthbuffer, stencilview, width, height,
-// hinstance, titbar stats and titlebar text.
-// -------------------------------------------------------------------------
-//entt::registry & SystemsPlan::GetUpdatedRegistryDXCore(entt::registry & registry)
-//{
-//	return DXCore::DXCoreInstance->UpdateRegistryDXCore(registry);
-//}
 
 
 // ---------------------------------------------------------
@@ -66,16 +49,6 @@ void SystemsPlan::CameraUpdate(CameraComponents* comps, float dt, entt::registry
 {
 	camera.Update(comps, dt,registry);
 }
-
-
-// ---------------------------------------------------
-// Call this system to add more textures for ps and vs
-// ---------------------------------------------------
-//entt::registry& SystemsPlan::InitTexture(entt::registry& registry)
-//{
-//	
-//	return GameEntities::Entities->InitTexture(registry);
-//}
 
 
 // ---------------------------
@@ -100,9 +73,9 @@ entt::registry& SystemsPlan::InitShaderVars(entt::registry& registry)
 // Create vertex shader file using SimpleShader class
 // Could be expanded as a library for more vertex shader files
 // -----------------------------------------------------------
-entt::registry& SystemsPlan::LoadCreateShader(entt::registry& registry)
+entt::registry& SystemsPlan::CreateBasicVertexShader(entt::registry& registry)
 {
-	return s_ShaderObj->LoadShaderFile(registry);
+	return s_ShaderObj->LoadVertexShaderFile(registry);
 }
 
 
@@ -110,7 +83,7 @@ entt::registry& SystemsPlan::LoadCreateShader(entt::registry& registry)
 // Create pixel shader file using SimpleShader class
 // Could be expanded as a library for more pixel shader files
 // -----------------------------------------------------------
-entt::registry & SystemsPlan::LoadCreatePixelShader(entt::registry & registry)
+entt::registry & SystemsPlan::CreateBasicPixelShader(entt::registry & registry)
 {
 	return s_ShaderObj->LoadPixelShaderFile(registry);
 }
@@ -125,13 +98,13 @@ entt::registry & SystemsPlan::CreateMatricesGeometry(entt::registry & registry)
 }
 
 
-void SystemsPlan::LoadCreateShaderSky(entt::registry& registry)
+void SystemsPlan::CreateVertexSkyShader(entt::registry& registry)
 {
-	sky_obj->LoadShaderFileSky(registry);
+	sky_obj->LoadVertexShaderFileSky(registry);
 }
 
 
-void SystemsPlan::LoadCreatePixelShaderSky(entt::registry& registry)
+void SystemsPlan::CreatePixelSkyShader(entt::registry& registry)
 {
 	sky_obj->LoadPixelShaderFileSky(registry);
 }
@@ -140,20 +113,3 @@ void SystemsPlan::SetSkyShaderVars(entt::registry& registry)
 {
 	sky_obj->SetSkyVars(registry);
 }
-
-
-// --------------
-// Create meshes
-// --------------
-//entt::registry & SystemsPlan::CreateModelGeometry(entt::registry & registry)
-//{
-//	
-//	//GameEntities::Entities->LoadMesh("Models/Sphere.obj", registry);
-//
-//	return registry;
-//}
-
-//void SystemsPlan::CleanUp(entt::registry& registry)
-//{
-//	//GameEntities::Entities->CleanUp(registry);
-//}

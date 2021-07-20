@@ -133,7 +133,7 @@
     <ClInclude Include="DXCore.h" />
     <ClInclude Include="Main.h" />
     <ClInclude Include="GameEntities.h" />
-    <ClInclude Include="SimpleShader.h" />
+    <ClInclude Include="BasicShader.h" />
     <ClInclude Include="SkyShader.h" />
     <ClInclude Include="SystemsPlan.h" />
     <ClInclude Include="InitEngine.h" />
@@ -144,7 +144,7 @@
     <ClCompile Include="DXCore.cpp" />
     <ClCompile Include="Main.cpp" />
     <ClCompile Include="GameEntities.cpp" />
-    <ClCompile Include="SimpleShader.cpp" />
+    <ClCompile Include="BasicShader.cpp" />
     <ClCompile Include="SkyShader.cpp" />
     <ClCompile Include="SystemsPlan.cpp" />
     <ClCompile Include="InitEngine.cpp" />

@@ -65,15 +65,15 @@ void InitEngine::InitEntt(RenderWindow mystruct)
 
 	SystemsPlan::Plan->InitShaderVars(m_rendererRegistry);
 
-	SystemsPlan::Plan->LoadCreateShader(m_rendererRegistry);
+	SystemsPlan::Plan->CreateBasicVertexShader(m_rendererRegistry); // Mesh Vs
 
-	SystemsPlan::Plan->LoadCreatePixelShader(m_rendererRegistry);
+	SystemsPlan::Plan->CreateBasicPixelShader(m_rendererRegistry); // Mesh PS
 
-	SystemsPlan::Plan->LoadCreateShaderSky(m_rendererRegistry); // Sky
+	SystemsPlan::Plan->CreateVertexSkyShader(m_rendererRegistry); // Sky VS
 
-	SystemsPlan::Plan->LoadCreatePixelShaderSky(m_rendererRegistry); // Sky
+	SystemsPlan::Plan->CreatePixelSkyShader(m_rendererRegistry); // Sky PS
 
-	SystemsPlan::Plan->SetSkyShaderVars(m_rendererRegistry); // Sky
+	SystemsPlan::Plan->SetSkyShaderVars(m_rendererRegistry); // Sky texture map
 
 	SystemsPlan::Plan->CreateMatricesGeometry(m_rendererRegistry);
 
@@ -82,31 +82,31 @@ void InitEngine::InitEntt(RenderWindow mystruct)
 	Mesh->InitTexture(m_rendererRegistry);
 
 	// Enter the number of mesh entities
-	unsigned int m_count = 1;
+	unsigned int m_count = 2000;
 
-	//VertexBoneData bl;
-	//bl.IDs.push_back(0);
 	// Create empty mesh entities
 	for (unsigned int i = 0; i < m_count; i++)
 	{
-		entt::entity newEntity = m_rendererRegistry.create();
-		m_rendererRegistry.emplace<MeshRenderVars>(newEntity, nullptr, nullptr, 0);
-		DirectX::XMFLOAT4X4 abc;
-		DirectX::XMStoreFloat4x4(&abc, DirectX::XMMatrixIdentity());
-		m_rendererRegistry.emplace<MeshEntityData>(newEntity, abc, DirectX::XMFLOAT3(0.0f, 0.0f, 0.0f), DirectX::XMFLOAT3(0.0f, 0.0f, 0.0f), DirectX::XMFLOAT3(0.0f, 0.0f, 0.0f));
-		//m_rendererRegistry.emplace<VertexBoneData>(newEntity, bl);
+		entt::entity meshEntity = m_rendererRegistry.create();
+		m_rendererRegistry.emplace<MeshRenderVars>(meshEntity, nullptr, nullptr, 0);
+		DirectX::XMFLOAT4X4 temp_wm;
+		DirectX::XMStoreFloat4x4(&temp_wm, DirectX::XMMatrixIdentity());
+		m_rendererRegistry.emplace<MeshEntityData>(meshEntity, temp_wm, DirectX::XMFLOAT3(0.0f, 0.0f, 0.0f), DirectX::XMFLOAT3(0.0f, 0.0f, 0.0f), DirectX::XMFLOAT3(0.0f, 0.0f, 0.0f));
+		std::map<std::string, UINT> mBoneMappingTemp;
+		std::vector<BoneInfo> mBoneInfo;
+		DirectX::XMMATRIX temp_NodeTransform;
+		m_rendererRegistry.emplace<MeshBoneData>(meshEntity, mBoneMappingTemp, mBoneInfo, UINT(0), temp_NodeTransform);
 	}
 
 	// Load mesh entities 'm_count' times in the buffers.
 	Mesh->LoadMesh("Models/silly_dancing.fbx", m_rendererRegistry);
 
-	entt::entity newEntity = m_rendererRegistry.create();
-	m_rendererRegistry.emplace<MeshRenderVarsSky>(newEntity, nullptr, nullptr, 0);
-	DirectX::XMFLOAT4X4 abc;
-	DirectX::XMStoreFloat4x4(&abc, DirectX::XMMatrixIdentity());
-	m_rendererRegistry.emplace<MeshEntityDataSky>(newEntity, abc, DirectX::XMFLOAT3(0.0f, 0.0f, 0.0f), DirectX::XMFLOAT3(0.0f, 0.0f, 0.0f), DirectX::XMFLOAT3(0.0f, 0.0f, 0.0f));
-
 	// Sky
+	entt::entity skyEntity = m_rendererRegistry.create();
+	m_rendererRegistry.emplace<MeshRenderVarsSky>(skyEntity, nullptr, nullptr, 0);
+	DirectX::XMFLOAT4X4 temp_wm;
+	DirectX::XMStoreFloat4x4(&temp_wm, DirectX::XMMatrixIdentity());
+	m_rendererRegistry.emplace<MeshEntityDataSky>(skyEntity, temp_wm, DirectX::XMFLOAT3(0.0f, 0.0f, 0.0f), DirectX::XMFLOAT3(0.0f, 0.0f, 0.0f), DirectX::XMFLOAT3(0.0f, 0.0f, 0.0f));
 	Mesh->LoadMeshSky("Models/Cube.obj", m_rendererRegistry);
 
 	// All set, pass the registry 

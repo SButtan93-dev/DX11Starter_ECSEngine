@@ -7,7 +7,7 @@
 #include "Components.h"
 #include <DirectXMath.h>
 #include "GameEntities.h"
-#include "SimpleShader.h"
+#include "BasicShader.h"
 #include "SystemsPlan.h"
 #include "SkyShader.h"
 #include "Camera.h"
@@ -15,6 +15,7 @@
 // instead of in Visual Studio settings if we want
 #pragma comment(lib, "d3d11.lib")
 
+// Main loop class
 class DXCore
 {
 public:
@@ -24,6 +25,8 @@ public:
 
 	// Static requirements for OS-level message processing
 	static DXCore* DXCoreInstance;
+
+	Camera camera;	   // systems, no data
 
 	static LRESULT CALLBACK WindowProc(
 		HWND hWnd,		// Window handle
@@ -46,11 +49,8 @@ public:
 	//  - OS-level messages coming in from Windows itself
 	//  - Calling update & draw back and forth, forever
 	// --------------------------------------------------------
-	HRESULT MainRunDX(entt::registry& registry, ISimpleShader* obj_shaderClass, SkyShader* obj_SkyShader, GameEntities* obj_BoneDatMesh);
-
-	void Update(float deltaTime, float totalTime, MeshEntityData* obj_mesh);
+	HRESULT MainRunDX(entt::registry& registry, BasicShader* obj_shaderClass, SkyShader* obj_SkyShader, GameEntities* obj_BoneDatMesh);
 	
-
 	// ---------------------------------------------------------------------------
 	// Supports:
 	// - Rendering calls
@@ -59,15 +59,11 @@ public:
 	// - Lighting (Point & Dir)
 	// - Texture (Diffuse and Specular maps effect created using BasicSampler)
 	// --------------------------------------------------------------------------
-	void Draw(RendererMainVars* obj_renderer, ISimpleShader* obj_refShader, 
-		MeshEntityData* obj_mesh, CameraComponents* obj_matrices, SimpleShaderVariables* obj_shaderVars, 
+	void Draw(RendererMainVars* obj_renderer, BasicShader* obj_refShader, CameraComponents* obj_matrices, SimpleShaderVariables* obj_shaderVars,
 		SimpleShaderPixelVariables* obj_pixShaderVars, SimpleVertexShaderStruct* obj_vsStruct, 
-		SimplePixelShaderStruct* obj_PSStruct, MeshRenderVars* obj_vbib, entt::registry& registry, TimeData objtime, SkyShader* obj_SkyShader, GameEntities* obj_BoneDatMesh);
+		SimplePixelShaderStruct* obj_PSStruct, entt::registry& registry, TimeData objtime, SkyShader* obj_SkyShader, GameEntities* obj_BoneDatMesh);
 
 	void DrawSky(entt::registry& registry, RendererMainVars* obj_renderer, ID3D11SamplerState* sampler, SkyShader& obj_SkyShader, CameraComponents* cam_Comp, TextureData* tex_Comp);
-
-	//GameEntities Mesh; // systems, no data
-	Camera camera;	   // systems, no data
 
 	// Convenience methods for handling mouse input, since we
 	// can easily grab mouse input from OS-level messages

@@ -15,40 +15,25 @@ public:
 
 	static SystemsPlan* Plan;
 
+	Camera camera;
+
 	void StartWindow(entt::registry &m_mainRendererRegistry);
 
 	void InitDirectXVars(entt::registry& registry);
 
-	Camera camera;
-
 	entt::registry& InitShaderVars(entt::registry& registry);
 
-	entt::registry & LoadCreateShader(entt::registry & registry);
-
-	entt::registry & LoadCreatePixelShader(entt::registry & registry);
-
+	entt::registry & CreateBasicVertexShader(entt::registry & registry);
+	entt::registry & CreateBasicPixelShader(entt::registry & registry);
 	entt::registry & CreateMatricesGeometry(entt::registry& registry);
 
-	void LoadCreateShaderSky(entt::registry& registry);
-
-	void LoadCreatePixelShaderSky(entt::registry& registry);
-
+	void CreateVertexSkyShader(entt::registry& registry);
+	void CreatePixelSkyShader(entt::registry& registry);
 	void SetSkyShaderVars(entt::registry& registry);
-
-	//	entt::registry& CreateVbIb(entt::registry& registry);
-
-	//	entt::registry& CreateModelGeometry(entt::registry& registry);
-
-	//	void CleanUp(entt::registry& registry);
-
-	//	entt::registry& GetUpdatedRegistryDXCore(entt::registry& registry);
 
 	void CameraUpdate(CameraComponents* comps, float dt, entt::registry& registry);
 
-	// entt::registry& InitTexture(entt::registry& registry);
-
 	void RunDXCore(entt::registry& registry, GameEntities* obj_MeshBoneData);
 
-	// GameEntities* e_gameObj = new GameEntities();
 };
 
