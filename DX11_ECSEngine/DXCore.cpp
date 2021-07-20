@@ -280,8 +280,8 @@ HRESULT DXCore::MainRunDX(entt::registry& registry, BasicShader* obj_shaderClass
 	auto mycomp = registry.view<RenderWindow, FPSData, RendererMainVars>();
 	auto mycompMesh = registry.view<MeshEntityData, MeshRenderVars>(); // mesh
 	auto mycompShader = registry.view<CameraComponents>(); // camera
-	auto mycompVertexPixel = registry.view<SimpleShaderVariables, SimpleShaderPixelVariables,
-										SimpleVertexShaderStruct, SimplePixelShaderStruct>();
+	auto mycompVertexPixel = registry.view<VertexShaderVars, PixelShaderVars,
+										InputLayoutVertexShader, PixelShader>();
 
 	//For renderer Data
 	entt::entity renderer;
@@ -306,7 +306,7 @@ HRESULT DXCore::MainRunDX(entt::registry& registry, BasicShader* obj_shaderClass
 	{
 		mesh_GPU = entity;
 	}
-	auto [mycompshaderstruct, mycompPixel, mycompvsStruct, mycompPSStruct] = registry.get<SimpleShaderVariables, SimpleShaderPixelVariables, SimpleVertexShaderStruct, SimplePixelShaderStruct>(mesh_GPU);
+	auto [mycompshaderstruct, mycompPixel, mycompvsStruct, mycompPSStruct] = registry.get<VertexShaderVars, PixelShaderVars, InputLayoutVertexShader, PixelShader>(mesh_GPU);
 
 	// Our overall game and message loop
 	MSG msg = {};
@@ -450,8 +450,8 @@ HRESULT DXCore::MainRunDX(entt::registry& registry, BasicShader* obj_shaderClass
 // - Texture (Diffuse and Specular maps effect created using BasicSampler)
 // --------------------------------------------------------------------------
 void DXCore::Draw(RendererMainVars* obj_renderer, BasicShader* obj_refShader
-	, CameraComponents* obj_matrices, SimpleShaderVariables* obj_shaderVars, SimpleShaderPixelVariables* obj_pixShaderVars
-	, SimpleVertexShaderStruct* obj_vsStruct, SimplePixelShaderStruct* obj_PSStruct, entt::registry& registry, TimeData objtime, SkyShader* obj_SkyShader, GameEntities* obj_BoneDatMesh)
+	, CameraComponents* obj_matrices, VertexShaderVars* obj_shaderVars, PixelShaderVars* obj_pixShaderVars
+	, InputLayoutVertexShader* obj_vsStruct, PixelShader* obj_PSStruct, entt::registry& registry, TimeData objtime, SkyShader* obj_SkyShader, GameEntities* obj_BoneDatMesh)
 {
 	const float color[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
 	int count = 0;
@@ -488,20 +488,20 @@ void DXCore::Draw(RendererMainVars* obj_renderer, BasicShader* obj_refShader
 		XMStoreFloat4x4(&obj_mesh.worldMatrix, XMMatrixTranspose(total)); // transpose to match DX11 shader
 		
 		// Camera
-		obj_refShader->SetData("world", &obj_mesh.worldMatrix, sizeof(float) * 16);
-		obj_refShader->SetData("view", &obj_matrices->viewMatrix, sizeof(float) * 16); 
-		obj_refShader->SetData("projection", &obj_matrices->projMatrix, sizeof(float) * 16);
+		obj_refShader->SetDataVertex("world", &obj_mesh.worldMatrix, sizeof(float) * 16);
+		obj_refShader->SetDataVertex("view", &obj_matrices->viewMatrix, sizeof(float) * 16); 
+		obj_refShader->SetDataVertex("projection", &obj_matrices->projMatrix, sizeof(float) * 16);
 	
 		// Reduce calls.
 		// 1 animation for all mesh.
 		// Calculate transformation on 1st entity and use the same throughout until next Draw call. 
 		if(count == 1) 
 		obj_BoneDatMesh->BoneTransform(RunningTime, Transforms, &obj_BoneData);
-		obj_refShader->SetData("BoneData", &Transforms[0], sizeof(float) * 832);
+		obj_refShader->SetDataVertex("BoneData", &Transforms[0], sizeof(float) * 832);
 
 		// Copy vertex data to GPU
-		obj_refShader->CopyAllBufferData(obj_renderer->context, obj_shaderVars->shaderValid, obj_shaderVars->constantBufferCount);
-		obj_refShader->SetShaderAndCBs(obj_shaderVars->shaderValid, obj_renderer->context, obj_shaderVars->constantBufferCount, obj_vsStruct);
+		obj_refShader->CopyAllBufferDataVertex(obj_renderer->context, obj_shaderVars->shaderValid, obj_shaderVars->constantBufferCount);
+		obj_refShader->SetShaderAndCBsVertex(obj_shaderVars->shaderValid, obj_renderer->context, obj_shaderVars->constantBufferCount, obj_vsStruct);
 
 		// Allocate GPU memory for vb, ib and indices of the mesh
 		// Still not displayed on screen. SwapChain() not called yet.
@@ -554,7 +554,7 @@ void DXCore::Draw(RendererMainVars* obj_renderer, BasicShader* obj_refShader
 void DXCore::DrawSky(entt::registry& registry, RendererMainVars* obj_renderer, ID3D11SamplerState* sampler, SkyShader& obj_SkyShader, CameraComponents* cam_Comp, TextureData* tex_Comp)
 {
 	auto skyVar = registry.view<MeshEntityDataSky, MeshRenderVarsSky>();
-	auto mycompSky = registry.view<SimpleShaderPixelVariablesSky, SimpleShaderVertexVariablesSky, SkyVarsPixelShader, SkyVarsVertexShader>();
+	auto mycompSky = registry.view<SkyPS_Vars, SkyVS_Vars, SkyVarsPixelShader, SkyVarsVertexShader>();
 	
 	entt::entity temp_Sky = registry.create();
 	entt::entity temp_SkyTex = registry.create();
@@ -564,7 +564,7 @@ void DXCore::DrawSky(entt::registry& registry, RendererMainVars* obj_renderer, I
 		temp_Sky = entity;
 	}
 
-	auto [ps_buf, vs_buf, ps_Sky, vs_Sky] = registry.get<SimpleShaderPixelVariablesSky, SimpleShaderVertexVariablesSky, SkyVarsPixelShader, SkyVarsVertexShader>(temp_Sky);
+	auto [ps_buf, vs_buf, ps_Sky, vs_Sky] = registry.get<SkyPS_Vars, SkyVS_Vars, SkyVarsPixelShader, SkyVarsVertexShader>(temp_Sky);
 	auto sky_VarTex = registry.view<SkyVars>();
 	for (auto entity : sky_VarTex)
 	{

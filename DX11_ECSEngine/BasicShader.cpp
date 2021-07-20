@@ -15,7 +15,7 @@ BasicShader::~BasicShader()
 	for (unsigned int i = 0; i < constanBufferCount1; i++)
 	{
 		//s_shaderVecs.constantBuffers[i].ConstantBuffer->Release();
-		s_shaderVecsPixel.constantBuffers[i].ConstantBuffer = s_shaderVecs.constantBuffers[i].ConstantBuffer;
+		s_shaderVecsPixel.constantBuffers[i].ConstantBuffer = s_shaderVecsVertex.constantBuffers[i].ConstantBuffer;
 		s_shaderVecsPixel.constantBuffers[i].ConstantBuffer->Release();
 		delete[] s_shaderVecsPixel.constantBuffers[i].LocalDataBuffer;
 	}
@@ -37,30 +37,31 @@ BasicShader::~BasicShader()
 	s_shaderVecsPixel.samplerTable.clear();
 	s_shaderVecsPixel.textureTable.clear();
 	
+	// vertex
 	// Handle constant buffers and local data buffers
 	for (unsigned int i = 0; i < constanBufferCount1; i++)
 	{
-		s_shaderVecs.constantBuffers[i].ConstantBuffer->Release();
-		delete[] s_shaderVecs.constantBuffers[i].LocalDataBuffer;
+		s_shaderVecsVertex.constantBuffers[i].ConstantBuffer->Release();
+		delete[] s_shaderVecsVertex.constantBuffers[i].LocalDataBuffer;
 	}
 
-	if (s_shaderVecs.constantBuffers)
+	if (s_shaderVecsVertex.constantBuffers)
 	{
-		delete[] s_shaderVecs.constantBuffers;
+		delete[] s_shaderVecsVertex.constantBuffers;
 		constanBufferCount1 = 0;
 	}
 
-	for (unsigned int i = 0; i < s_shaderVecs.shaderResourceViews.size(); i++)
-		delete s_shaderVecs.shaderResourceViews[i];
+	for (unsigned int i = 0; i < s_shaderVecsVertex.shaderResourceViews.size(); i++)
+		delete s_shaderVecsVertex.shaderResourceViews[i];
 
-	for (unsigned int i = 0; i < s_shaderVecs.samplerStates.size(); i++)
-		delete s_shaderVecs.samplerStates[i];
+	for (unsigned int i = 0; i < s_shaderVecsVertex.samplerStates.size(); i++)
+		delete s_shaderVecsVertex.samplerStates[i];
 
 	// Clean up tables
-	s_shaderVecs.varTable.clear();
-	s_shaderVecs.cbTable.clear();
-	s_shaderVecs.samplerTable.clear();
-	s_shaderVecs.textureTable.clear();
+	s_shaderVecsVertex.varTable.clear();
+	s_shaderVecsVertex.cbTable.clear();
+	s_shaderVecsVertex.samplerTable.clear();
+	s_shaderVecsVertex.textureTable.clear();
 
 }
 
@@ -78,18 +79,18 @@ entt::registry& BasicShader::InitShaderBegin(entt::registry & registry)
 	shaderStringsObjSky.SkyPixelShaderString = L"SkyPS.cso";
 	shaderStringsObjSky.SkyVertexShaderString = L"SkyVS.cso";
 
-	registry.emplace<SimpleVertexShaderStruct>(s_initialEntity, false, nullptr, nullptr);
-	registry.emplace<SimplePixelShaderStruct>(s_initialEntity, nullptr);
-	registry.emplace<SimpleShaderVariables>(s_initialEntity, false, nullptr, nullptr, (unsigned int)0);
-	registry.emplace<SimpleShaderPixelVariables>(s_initialEntity, false, nullptr,	
+	registry.emplace<InputLayoutVertexShader>(s_initialEntity, false, nullptr, nullptr);
+	registry.emplace<PixelShader>(s_initialEntity, nullptr);
+	registry.emplace<VertexShaderVars>(s_initialEntity, false, nullptr, nullptr, (unsigned int)0);
+	registry.emplace<PixelShaderVars>(s_initialEntity, false, nullptr,	
 		nullptr, (unsigned int)0);
 
 	// Sky stuff!
 	registry.emplace<SkyVarsVertexShader>(s_initialEntity, false, nullptr, nullptr); //vs
 	registry.emplace<SkyVarsPixelShader>(s_initialEntity, nullptr); // ps
 	registry.emplace<SkyVars>(s_initialEntity, nullptr, nullptr, nullptr); // srv, raster & depth
-	registry.emplace<SimpleShaderVertexVariablesSky>(s_initialEntity, false, nullptr, nullptr, (unsigned int)0);
-	registry.emplace<SimpleShaderPixelVariablesSky>(s_initialEntity, false, nullptr, nullptr, (unsigned int)0); 
+	registry.emplace<SkyVS_Vars>(s_initialEntity, false, nullptr, nullptr, (unsigned int)0);
+	registry.emplace<SkyPS_Vars>(s_initialEntity, false, nullptr, nullptr, (unsigned int)0); 
 
 	registry.emplace<ShaderStrings>(s_initialEntity, shaderStringsObj.vertexShaderString, shaderStringsObj.pixelShaderString);
 	registry.emplace<ShaderStringsSky>(s_initialEntity, shaderStringsObjSky.SkyVertexShaderString, shaderStringsObjSky.SkyPixelShaderString);
@@ -98,7 +99,8 @@ entt::registry& BasicShader::InitShaderBegin(entt::registry & registry)
 }
 
 
-entt::registry& BasicShader::CreateMatrices(entt::registry& registry)
+// Set view and projection matrices for the camera
+void BasicShader::CreateMatrices(entt::registry& registry)
 {
 	// Get camera component id
 	auto s_mainShaderComp = registry.view<CameraComponents>();
@@ -110,28 +112,21 @@ entt::registry& BasicShader::CreateMatrices(entt::registry& registry)
 	// Check for the camera entity using the component id
 	for (auto entity : s_mainShaderComp)
 	{
-		// Get the component from entity
-		auto &c_simpleShaderVariables =
+		auto &c_VertexShaderVars =
 			s_mainShaderComp.get<CameraComponents>(entity);
 			
-
-		DirectX::XMFLOAT4X4 view = c_simpleShaderVariables.viewMatrix;
-		DirectX::XMFLOAT4X4 projection = c_simpleShaderVariables.projMatrix;
-
-		//XMStoreFloat4x4(&view, DirectX::XMMatrixIdentity());
-
+		DirectX::XMFLOAT4X4 view = c_VertexShaderVars.viewMatrix;
+		DirectX::XMFLOAT4X4 projection = c_VertexShaderVars.projMatrix;
 		DirectX::XMMATRIX P = DirectX::XMMatrixPerspectiveFovLH(
 			0.25f * DirectX::XM_PI,		// Field of View Angle
 			(float)(1280 / 720),		// Aspect ratio
 			0.1f,				// Near clip plane distance
 			1000.0f);			// Far clip plane distance
 		XMStoreFloat4x4(&projection, XMMatrixTranspose(P)); // Transpose for HLSL!
-		//XMStoreFloat4x4(&projection, DirectX::XMMatrixIdentity());
 
 		// Set position value manually, could be set by a local variable too..
 		registry.replace<CameraComponents>(entity, view, projection, DirectX::XMFLOAT3(0.0f,0.0f, 0.0f), DirectX::XMFLOAT3(10.0f, 0.0f,-30.0f), rotation, 0.0f, 0.0f);
 	}
-	return registry;
 }
 
 
@@ -146,7 +141,7 @@ bool BasicShader::CreateVertexShader(entt::registry& registry)
 {
 
 	auto s_mainShaderComp = registry.view<RendererMainVars>();
-	auto mycomp = registry.view<SimpleShaderVariables, SimpleVertexShaderStruct>();
+	auto mycomp = registry.view<VertexShaderVars, InputLayoutVertexShader>();
 
 	entt::entity entity1;
 
@@ -164,21 +159,21 @@ bool BasicShader::CreateVertexShader(entt::registry& registry)
 		entity2 = entity;	
 	}
 
-	auto [c_simpleShaderVariables, c_simpleVertexShaderStruct] = registry.get<SimpleShaderVariables, SimpleVertexShaderStruct>(entity2);
+	auto [c_VertexShaderVars, c_InputLayoutVertexShader] = registry.get<VertexShaderVars, InputLayoutVertexShader>(entity2);
 
 		// Create the shader from the blob
 	HRESULT result = c_rendererMainVars.device->CreateVertexShader(
-		c_simpleShaderVariables.shaderBlob->GetBufferPointer(),
-		c_simpleShaderVariables.shaderBlob->GetBufferSize(),
+		c_VertexShaderVars.shaderBlob->GetBufferPointer(),
+		c_VertexShaderVars.shaderBlob->GetBufferSize(),
 		0,
-		&c_simpleVertexShaderStruct.shader);
+		&c_InputLayoutVertexShader.shader);
 
 	// Did the creation work?
 	if (result != S_OK)
 		return false;
 
 	// Do we already have an input layout?
-	if (c_simpleVertexShaderStruct.inputLayout)
+	if (c_InputLayoutVertexShader.inputLayout)
 		return true;
 
 	// Vertex shader was created successfully, so we now use the
@@ -189,8 +184,8 @@ bool BasicShader::CreateVertexShader(entt::registry& registry)
 	// Reflect shader info
 	ID3D11ShaderReflection* refl;
 	D3DReflect(
-		c_simpleShaderVariables.shaderBlob->GetBufferPointer(),
-		c_simpleShaderVariables.shaderBlob->GetBufferSize(),
+		c_VertexShaderVars.shaderBlob->GetBufferPointer(),
+		c_VertexShaderVars.shaderBlob->GetBufferSize(),
 		IID_ID3D11ShaderReflection,
 		(void**)&refl);
 
@@ -229,7 +224,7 @@ bool BasicShader::CreateVertexShader(entt::registry& registry)
 			elementDesc.InputSlotClass = D3D11_INPUT_PER_INSTANCE_DATA;
 			elementDesc.InstanceDataStepRate = 1;
 
-			c_simpleVertexShaderStruct.perInstanceCompatible = true;
+			c_InputLayoutVertexShader.perInstanceCompatible = true;
 		}
 
 		// Determine DXGI format
@@ -266,15 +261,15 @@ bool BasicShader::CreateVertexShader(entt::registry& registry)
 	HRESULT hr = c_rendererMainVars.device->CreateInputLayout(
 		&inputLayoutDesc[0],
 		(unsigned int)inputLayoutDesc.size(),
-		c_simpleShaderVariables.shaderBlob->GetBufferPointer(),
-		c_simpleShaderVariables.shaderBlob->GetBufferSize(),
-		&c_simpleVertexShaderStruct.inputLayout);
+		c_VertexShaderVars.shaderBlob->GetBufferPointer(),
+		c_VertexShaderVars.shaderBlob->GetBufferSize(),
+		&c_InputLayoutVertexShader.inputLayout);
 
 	registry.replace<RendererMainVars>(entity1, c_rendererMainVars.swapChain, c_rendererMainVars.device,
 		c_rendererMainVars.context, c_rendererMainVars.backBufferRTV, c_rendererMainVars.depthStencilView);
 
-	registry.replace<SimpleVertexShaderStruct>(entity2, c_simpleVertexShaderStruct.perInstanceCompatible, c_simpleVertexShaderStruct.inputLayout,
-		c_simpleVertexShaderStruct.shader);
+	registry.replace<InputLayoutVertexShader>(entity2, c_InputLayoutVertexShader.perInstanceCompatible, c_InputLayoutVertexShader.inputLayout,
+		c_InputLayoutVertexShader.shader);
 
 	// All done, clean up
 	refl->Release();
@@ -299,7 +294,7 @@ bool BasicShader::CreatePixelShader(entt::registry & registry)
 	entt::entity ps_entity;
 	auto mycomp = registry.view<RendererMainVars>();
 
-	auto mycomp2 = registry.view<SimplePixelShaderStruct, SimpleShaderPixelVariables>();
+	auto mycomp2 = registry.view<PixelShader, PixelShaderVars>();
 
 	for (auto entity : mycomp)
 	{
@@ -313,7 +308,7 @@ bool BasicShader::CreatePixelShader(entt::registry & registry)
 
 	auto &c_win = mycomp.get<RendererMainVars>(gpu_main);
 
-	auto [c_pixStruct, c_pixVars] = mycomp2.get<SimplePixelShaderStruct, SimpleShaderPixelVariables>(ps_entity);
+	auto [c_pixStruct, c_pixVars] = mycomp2.get<PixelShader, PixelShaderVars>(ps_entity);
 	// Create the shader from the blob
 	HRESULT result = c_win.device->CreatePixelShader(
 		c_pixVars.shaderBlob->GetBufferPointer(),
@@ -321,7 +316,7 @@ bool BasicShader::CreatePixelShader(entt::registry & registry)
 		0,
 		&c_pixStruct.shader);
 
-	registry.replace<SimplePixelShaderStruct>(ps_entity, c_pixStruct.shader);
+	registry.replace<PixelShader>(ps_entity, c_pixStruct.shader);
 	// Check the result
 	return (result == S_OK);
 }
@@ -331,15 +326,15 @@ bool BasicShader::CreatePixelShader(entt::registry & registry)
 // -------------------------------
 entt::registry& BasicShader::ReadFileToBlobVertex(entt::registry & registry)
 {
-	auto mainShaderComp = registry.view<SimpleShaderVariables, ShaderStrings>();
+	auto mainShaderComp = registry.view<VertexShaderVars, ShaderStrings>();
 
 	for (auto entity : mainShaderComp)
 	{
-		auto[mycomp, mycomp2] = mainShaderComp.get<SimpleShaderVariables, ShaderStrings>(entity);
+		auto[mycomp, mycomp2] = mainShaderComp.get<VertexShaderVars, ShaderStrings>(entity);
 		// Load the shader to a blob and ensure it worked
 		D3DReadFileToBlob(mycomp2.vertexShaderString, &mycomp.shaderBlob); // also returns HRESULT
 
-		registry.replace<SimpleShaderVariables>(entity, mycomp.shaderValid, mycomp.shaderBlob,
+		registry.replace<VertexShaderVars>(entity, mycomp.shaderValid, mycomp.shaderBlob,
 			mycomp.ConstantBuffer, mycomp.constantBufferCount);
 	}
 	return registry;
@@ -350,12 +345,12 @@ entt::registry& BasicShader::ReadFileToBlobVertex(entt::registry & registry)
 // ------------------------------
 entt::registry& BasicShader::ReadFileToBlobPixel(entt::registry & registry)
 {
-	auto mainShaderComp = registry.view<SimpleShaderPixelVariables>();
+	auto mainShaderComp = registry.view<PixelShaderVars>();
 
 	LPCWSTR abc = L"PixelShader.cso"; // test
 	for (auto entity : mainShaderComp)
 	{
-		auto mycomp = mainShaderComp.get<SimpleShaderPixelVariables>(entity);
+		auto mycomp = mainShaderComp.get<PixelShaderVars>(entity);
 		// Load the shader to a blob and ensure it worked
 		HRESULT hr = D3DReadFileToBlob(abc, &mycomp.shaderBlob);
 		if (hr != S_OK)
@@ -363,7 +358,7 @@ entt::registry& BasicShader::ReadFileToBlobPixel(entt::registry & registry)
 			//return false;
 		}
 
-		registry.replace<SimpleShaderPixelVariables>(entity, mycomp.shaderValid, mycomp.shaderBlob,
+		registry.replace<PixelShaderVars>(entity, mycomp.shaderValid, mycomp.shaderBlob,
 			mycomp.ConstantBuffer, mycomp.constantBufferCount);
 	}
 	return registry;
@@ -377,7 +372,7 @@ entt::registry& BasicShader::ReadFileToBlobPixel(entt::registry & registry)
 //
 // shaderFile - A "wide string" specifying the compiled shader to load
 // -----------------------------------------------------------------------------------------
-entt::registry& BasicShader::LoadVertexShaderFile(entt::registry &registry)
+void BasicShader::LoadVertexShaderFile(entt::registry &registry)
 {
 
 	bool checkLoadShader = CreateVertexShader(ReadFileToBlobVertex(registry));
@@ -388,11 +383,11 @@ entt::registry& BasicShader::LoadVertexShaderFile(entt::registry &registry)
 	{
 		auto& get_component = d_component.get<RendererMainVars>(entity);
 
-		auto mainShaderComp = registry.view<SimpleShaderVariables>();
+		auto mainShaderComp = registry.view<VertexShaderVars>();
 
 		for (auto entity : mainShaderComp)
 		{
-			auto mycomp = mainShaderComp.get<SimpleShaderVariables>(entity);
+			auto mycomp = mainShaderComp.get<VertexShaderVars>(entity);
 
 			// Create the shader - Calls an overloaded version of this abstract
 			// method in the appropriate child class
@@ -412,7 +407,7 @@ entt::registry& BasicShader::LoadVertexShaderFile(entt::registry &registry)
 
 			// Create resource arrays
 			mycomp.constantBufferCount = shaderDesc.ConstantBuffers;
-			s_shaderVecs.constantBuffers = new SimpleConstantBuffer[mycomp.constantBufferCount];
+			s_shaderVecsVertex.constantBuffers = new ConstantBufferInfo[mycomp.constantBufferCount];
 
 			// Handle bound resources (like shaders and samplers)
 			unsigned int resourceCount = shaderDesc.BoundResources;
@@ -428,24 +423,24 @@ entt::registry& BasicShader::LoadVertexShaderFile(entt::registry &registry)
 				case D3D_SIT_TEXTURE: // A texture resource
 				{
 					// Create the SRV wrapper
-					SimpleSRV* srv = new SimpleSRV();
+					BasicSRV* srv = new BasicSRV();
 					srv->BindIndex = resourceDesc.BindPoint;				// Shader bind point
-					srv->Index = (unsigned int)s_shaderVecs.shaderResourceViews.size();	// Raw index
+					srv->Index = (unsigned int)s_shaderVecsVertex.shaderResourceViews.size();	// Raw index
 
-					s_shaderVecs.textureTable.insert(std::pair<std::string, SimpleSRV*>(resourceDesc.Name, srv));
-					s_shaderVecs.shaderResourceViews.push_back(srv);
+					s_shaderVecsVertex.textureTable.insert(std::pair<std::string, BasicSRV*>(resourceDesc.Name, srv));
+					s_shaderVecsVertex.shaderResourceViews.push_back(srv);
 				}
 				break;
 
 				case D3D_SIT_SAMPLER: // A sampler resource
 				{
 					//Create the sampler wrapper
-					SimpleSampler* samp = new SimpleSampler();
+					BasicSampler* samp = new BasicSampler();
 					samp->BindIndex = resourceDesc.BindPoint;			// Shader bind point
-					samp->Index = (unsigned int)s_shaderVecs.samplerStates.size();	// Raw index
+					samp->Index = (unsigned int)s_shaderVecsVertex.samplerStates.size();	// Raw index
 
-					s_shaderVecs.samplerTable.insert(std::pair<std::string, SimpleSampler*>(resourceDesc.Name, samp));
-					s_shaderVecs.samplerStates.push_back(samp);
+					s_shaderVecsVertex.samplerTable.insert(std::pair<std::string, BasicSampler*>(resourceDesc.Name, samp));
+					s_shaderVecsVertex.samplerStates.push_back(samp);
 				}
 				break;
 				}
@@ -468,9 +463,9 @@ entt::registry& BasicShader::LoadVertexShaderFile(entt::registry &registry)
 				refl->GetResourceBindingDescByName(bufferDesc.Name, &bindDesc);
 
 				// Set up the buffer and put its pointer in the table
-				s_shaderVecs.constantBuffers[b].BindIndex = bindDesc.BindPoint;
-				s_shaderVecs.constantBuffers[b].Name = bufferDesc.Name;
-				s_shaderVecs.cbTable.insert(std::pair<std::string, SimpleConstantBuffer*>(bufferDesc.Name, &s_shaderVecs.constantBuffers[b]));
+				s_shaderVecsVertex.constantBuffers[b].BindIndex = bindDesc.BindPoint;
+				s_shaderVecsVertex.constantBuffers[b].Name = bufferDesc.Name;
+				s_shaderVecsVertex.cbTable.insert(std::pair<std::string, ConstantBufferInfo*>(bufferDesc.Name, &s_shaderVecsVertex.constantBuffers[b]));
 
 				// Create this constant buffer
 				D3D11_BUFFER_DESC newBuffDesc;
@@ -480,12 +475,12 @@ entt::registry& BasicShader::LoadVertexShaderFile(entt::registry &registry)
 				newBuffDesc.CPUAccessFlags = 0;
 				newBuffDesc.MiscFlags = 0;
 				newBuffDesc.StructureByteStride = 0;
-				get_component.device->CreateBuffer(&newBuffDesc, 0, &s_shaderVecs.constantBuffers[b].ConstantBuffer);
+				get_component.device->CreateBuffer(&newBuffDesc, 0, &s_shaderVecsVertex.constantBuffers[b].ConstantBuffer);
 
 				// Set up the data buffer for this constant buffer
-				s_shaderVecs.constantBuffers[b].Size = bufferDesc.Size;
-				s_shaderVecs.constantBuffers[b].LocalDataBuffer = new unsigned char[bufferDesc.Size];
-				ZeroMemory(s_shaderVecs.constantBuffers[b].LocalDataBuffer, bufferDesc.Size);
+				s_shaderVecsVertex.constantBuffers[b].Size = bufferDesc.Size;
+				s_shaderVecsVertex.constantBuffers[b].LocalDataBuffer = new unsigned char[bufferDesc.Size];
+				ZeroMemory(s_shaderVecsVertex.constantBuffers[b].LocalDataBuffer, bufferDesc.Size);
 
 				// Loop through all variables in this buffer
 				for (unsigned int v = 0; v < bufferDesc.Variables; v++)
@@ -499,7 +494,7 @@ entt::registry& BasicShader::LoadVertexShaderFile(entt::registry &registry)
 					var->GetDesc(&varDesc);
 
 					// Create the variable struct
-					SimpleShaderVariable varStruct;
+					ShaderVariableInfo varStruct;
 					varStruct.ConstantBufferIndex = b;
 					varStruct.ByteOffset = varDesc.StartOffset;
 					varStruct.Size = varDesc.Size;
@@ -508,18 +503,17 @@ entt::registry& BasicShader::LoadVertexShaderFile(entt::registry &registry)
 					std::string varName(varDesc.Name);
 
 					// Add this variable to the table and the constant buffer
-					s_shaderVecs.varTable.insert(std::pair<std::string, SimpleShaderVariable>(varName, varStruct));
-					s_shaderVecs.constantBuffers[b].Variables.push_back(varStruct);
+					s_shaderVecsVertex.varTable.insert(std::pair<std::string, ShaderVariableInfo>(varName, varStruct));
+					s_shaderVecsVertex.constantBuffers[b].Variables.push_back(varStruct);
 				}
 			}
 
-			registry.replace<SimpleShaderVariables>(entity, mycomp.shaderValid, mycomp.shaderBlob, mycomp.ConstantBuffer, mycomp.constantBufferCount);
+			registry.replace<VertexShaderVars>(entity, mycomp.shaderValid, mycomp.shaderBlob, mycomp.ConstantBuffer, mycomp.constantBufferCount);
 
 			// All set
 			refl->Release();
 		}
 	}
-	return registry;
 }
 
 
@@ -528,7 +522,7 @@ entt::registry& BasicShader::LoadVertexShaderFile(entt::registry &registry)
 //
 // shaderFile - A "wide string" specifying the compiled shader to load
 // -----------------------------------------------------------------------------------
-entt::registry& BasicShader::LoadPixelShaderFile(entt::registry &registry)
+void BasicShader::LoadPixelShaderFile(entt::registry &registry)
 {
 
 	bool checkLoadShader = CreatePixelShader(ReadFileToBlobPixel(registry));
@@ -539,11 +533,11 @@ entt::registry& BasicShader::LoadPixelShaderFile(entt::registry &registry)
 	{
 		RendererMainVars& renderer_component = d_component.get<RendererMainVars>(entity);
 
-		auto mainShaderComp = registry.view<SimpleShaderPixelVariables>();
+		auto mainShaderComp = registry.view<PixelShaderVars>();
 
 		for (auto entity : mainShaderComp)
 		{
-			auto mycomp = mainShaderComp.get<SimpleShaderPixelVariables>(entity);
+			auto mycomp = mainShaderComp.get<PixelShaderVars>(entity);
 
 			// Set up shader reflection to get information about
 			// this shader and its variables,  buffers, etc.
@@ -560,7 +554,7 @@ entt::registry& BasicShader::LoadPixelShaderFile(entt::registry &registry)
 
 			// Create resource arrays
 			mycomp.constantBufferCount = shaderDesc.ConstantBuffers;
-			s_shaderVecsPixel.constantBuffers = new SimpleConstantBuffer[mycomp.constantBufferCount];
+			s_shaderVecsPixel.constantBuffers = new ConstantBufferInfo[mycomp.constantBufferCount];
 
 			// Handle bound resources (like shaders and samplers)
 			unsigned int resourceCount = shaderDesc.BoundResources;
@@ -576,11 +570,11 @@ entt::registry& BasicShader::LoadPixelShaderFile(entt::registry &registry)
 				case D3D_SIT_TEXTURE: // A texture resource
 				{
 					// Create the SRV wrapper
-					SimpleSRV* srv = new SimpleSRV();
+					BasicSRV* srv = new BasicSRV();
 					srv->BindIndex = resourceDesc.BindPoint;				// Shader bind point
 					srv->Index = (unsigned int)s_shaderVecsPixel.shaderResourceViews.size();	// Raw index
 
-					s_shaderVecsPixel.textureTable.insert(std::pair<std::string, SimpleSRV*>(resourceDesc.Name, srv));
+					s_shaderVecsPixel.textureTable.insert(std::pair<std::string, BasicSRV*>(resourceDesc.Name, srv));
 					s_shaderVecsPixel.shaderResourceViews.push_back(srv);
 				}
 				break;
@@ -588,11 +582,11 @@ entt::registry& BasicShader::LoadPixelShaderFile(entt::registry &registry)
 				case D3D_SIT_SAMPLER: // A sampler resource
 				{
 					//Create the sampler wrapper
-					SimpleSampler* samp = new SimpleSampler();
+					BasicSampler* samp = new BasicSampler();
 					samp->BindIndex = resourceDesc.BindPoint;			// Shader bind point
 					samp->Index = (unsigned int)s_shaderVecsPixel.samplerStates.size();	// Raw index
 
-					s_shaderVecsPixel.samplerTable.insert(std::pair<std::string, SimpleSampler*>(resourceDesc.Name, samp));
+					s_shaderVecsPixel.samplerTable.insert(std::pair<std::string, BasicSampler*>(resourceDesc.Name, samp));
 					s_shaderVecsPixel.samplerStates.push_back(samp);
 				}
 				break;
@@ -618,7 +612,7 @@ entt::registry& BasicShader::LoadPixelShaderFile(entt::registry &registry)
 				// Set up the buffer and put its pointer in the table
 				s_shaderVecsPixel.constantBuffers[b].BindIndex = bindDesc.BindPoint;
 				s_shaderVecsPixel.constantBuffers[b].Name = bufferDesc.Name;
-				s_shaderVecsPixel.cbTable.insert(std::pair<std::string, SimpleConstantBuffer*>(bufferDesc.Name, &s_shaderVecsPixel.constantBuffers[b]));
+				s_shaderVecsPixel.cbTable.insert(std::pair<std::string, ConstantBufferInfo*>(bufferDesc.Name, &s_shaderVecsPixel.constantBuffers[b]));
 
 				// Create this constant buffer
 				D3D11_BUFFER_DESC newBuffDesc;
@@ -647,7 +641,7 @@ entt::registry& BasicShader::LoadPixelShaderFile(entt::registry &registry)
 					var->GetDesc(&varDesc);
 
 					// Create the variable struct
-					SimpleShaderVariable varStruct;
+					ShaderVariableInfo varStruct;
 					varStruct.ConstantBufferIndex = b;
 					varStruct.ByteOffset = varDesc.StartOffset;
 					varStruct.Size = varDesc.Size;
@@ -656,42 +650,41 @@ entt::registry& BasicShader::LoadPixelShaderFile(entt::registry &registry)
 					std::string varName(varDesc.Name);
 
 					// Add this variable to the table and the constant buffer
-					s_shaderVecsPixel.varTable.insert(std::pair<std::string, SimpleShaderVariable>(varName, varStruct));
+					s_shaderVecsPixel.varTable.insert(std::pair<std::string, ShaderVariableInfo>(varName, varStruct));
 					s_shaderVecsPixel.constantBuffers[b].Variables.push_back(varStruct);
 				}
 			}
 
-			registry.replace<SimpleShaderPixelVariables>(entity, mycomp.shaderValid, mycomp.shaderBlob, mycomp.ConstantBuffer, mycomp.constantBufferCount);
+			registry.replace<PixelShaderVars>(entity, mycomp.shaderValid, mycomp.shaderBlob, mycomp.ConstantBuffer, mycomp.constantBufferCount);
 
 			// All set
 			refl->Release();
 		}
 	}
-	return registry;
 }
 
 
-// --------------------------------------------------------
-// Sets a variable by name with arbitrary data of the specified size
+// ---------------------------------------------------------------------
+// Sets variable by name with arbitrary data of the specified size in vs
 // name - The name of the shader variable
 // data - The data to set in the buffer
 // size - The size of the data (this must match the variable's size)
-// --------------------------------------------------------
-void BasicShader::SetData(std::string name, const void* data, unsigned int size)
+// ---------------------------------------------------------------------
+void BasicShader::SetDataVertex(std::string name, const void* data, unsigned int size)
 {
 	// Look for the variable and verify
-	SimpleShaderVariable* var = FindVariable(name, size);
+	ShaderVariableInfo* var = FindVariableVertex(name, size);
 
 	// Set the data in the local data buffer
 	memcpy(
-		s_shaderVecs.constantBuffers[var->ConstantBufferIndex].LocalDataBuffer + var->ByteOffset,
+		s_shaderVecsVertex.constantBuffers[var->ConstantBufferIndex].LocalDataBuffer + var->ByteOffset,
 		data,
 		size);
 }
 
 
 // -------------------------------------------------------------------
-// Sets a variable by name with arbitrary data of the specified size
+// Sets variable by name with arbitrary data of the specified size in ps
 // name - The name of the shader variable
 // data - The data to set in the buffer
 // size - The size of the data (this must match the variable's size)
@@ -699,7 +692,7 @@ void BasicShader::SetData(std::string name, const void* data, unsigned int size)
 void BasicShader::SetDataPixel(std::string name, const DirectX::XMFLOAT3 data, unsigned int size)
 {
 	// Look for the variable and verify
-	SimpleShaderVariable* var = FindVariablePixel(name, size);
+	ShaderVariableInfo* var = FindVariablePixel(name, size);
 
 	// Set the data in the local data buffer
 	memcpy(
@@ -717,18 +710,18 @@ void BasicShader::SetDataPixel(std::string name, const DirectX::XMFLOAT3 data, u
  //-size - the size of the variable (for verification), or -1 to bypass
  //-return vertex shader variable from the table
  //--------------------------------------------------------
-SimpleShaderVariable* BasicShader::FindVariable(std::string name, int size)
+ShaderVariableInfo* BasicShader::FindVariableVertex(std::string name, int size)
 {
 	// Look for the key
-	std::unordered_map<std::string, SimpleShaderVariable>::iterator result =
-		s_shaderVecs.varTable.find(name);
+	std::unordered_map<std::string, ShaderVariableInfo>::iterator result =
+		s_shaderVecsVertex.varTable.find(name);
 
 	// Did we find the key?
-	if (result == s_shaderVecs.varTable.end())
+	if (result == s_shaderVecsVertex.varTable.end())
 		return 0;
 
 	// Grab the result from the iterator
-	SimpleShaderVariable* var = &(result->second);
+	ShaderVariableInfo* var = &(result->second);
 
 	// Is the data size correct ?
 	if (size > 0 && var->Size != size)
@@ -747,10 +740,10 @@ SimpleShaderVariable* BasicShader::FindVariable(std::string name, int size)
 //-size - the size of the variable (for verification), or -1 to bypass
 //-return pixel shader variable from the table
 //--------------------------------------------------------
-SimpleShaderVariable * BasicShader::FindVariablePixel(std::string name, int size)
+ShaderVariableInfo * BasicShader::FindVariablePixel(std::string name, int size)
 {
 	// Look for the key
-	std::unordered_map<std::string, SimpleShaderVariable>::iterator result =
+	std::unordered_map<std::string, ShaderVariableInfo>::iterator result =
 		s_shaderVecsPixel.varTable.find(name);
 
 	// Did we find the key?
@@ -758,7 +751,7 @@ SimpleShaderVariable * BasicShader::FindVariablePixel(std::string name, int size
 		return 0;
 
 	// Grab the result from the iterator
-	SimpleShaderVariable* var = &(result->second);
+	ShaderVariableInfo* var = &(result->second);
 
 	// Is the data size correct ?
 	if (size > 0 && var->Size != size)
@@ -772,14 +765,14 @@ SimpleShaderVariable * BasicShader::FindVariablePixel(std::string name, int size
 void BasicShader::FindVariableBasic(std::string name, ID3D11SamplerState* samplerState, ID3D11DeviceContext* deviceContext)
 {
 	// Look for the key
-	std::unordered_map<std::string, SimpleSampler*>::iterator result =
+	std::unordered_map<std::string, BasicSampler*>::iterator result =
 		s_shaderVecsPixel.samplerTable.find(name);
 
 	// Did we find the key?
 	if (result == s_shaderVecsPixel.samplerTable.end())
 		return;
 
-	const SimpleSampler* sampInfo = result->second;
+	const BasicSampler* sampInfo = result->second;
 
 	if (sampInfo == 0)
 		return;
@@ -792,14 +785,14 @@ void BasicShader::FindVariableBasic(std::string name, ID3D11SamplerState* sample
 void BasicShader::FindVariableTexture(std::string name, ID3D11ShaderResourceView* srv, ID3D11DeviceContext* deviceContext)
 {
 	// Look for the key
-	std::unordered_map<std::string, SimpleSRV*>::iterator result =
+	std::unordered_map<std::string, BasicSRV*>::iterator result =
 		s_shaderVecsPixel.textureTable.find(name);
 
 	// Did we find the key?
 	if (result == s_shaderVecsPixel.textureTable.end())
 		return;
 
-	const SimpleSRV* srvInfo = result->second;
+	const BasicSRV* srvInfo = result->second;
 
 	if (srvInfo == 0)
 		return;
@@ -814,7 +807,7 @@ void BasicShader::FindVariableTexture(std::string name, ID3D11ShaderResourceView
 // shader's constant buffers.  To just copy one
 // buffer, use CopyBufferData()
 // --------------------------------------------------------
-void BasicShader::CopyAllBufferData(ID3D11DeviceContext* deviceContext, bool shaderValid, unsigned int constantBufferCount)
+void BasicShader::CopyAllBufferDataVertex(ID3D11DeviceContext* deviceContext, bool shaderValid, unsigned int constantBufferCount)
 {
 	// Ensure the shader is valid
 	//if (!shaderValid) return;
@@ -824,8 +817,8 @@ void BasicShader::CopyAllBufferData(ID3D11DeviceContext* deviceContext, bool sha
 	{
 		// Copy the entire local data buffer
 		deviceContext->UpdateSubresource(
-		s_shaderVecs.constantBuffers[i].ConstantBuffer, 0, 0,
-			s_shaderVecs.constantBuffers[i].LocalDataBuffer, 0, 0);
+		s_shaderVecsVertex.constantBuffers[i].ConstantBuffer, 0, 0,
+			s_shaderVecsVertex.constantBuffers[i].LocalDataBuffer, 0, 0);
 	}
 }
 
@@ -850,7 +843,7 @@ void BasicShader::CopyAllBufferDataPixel(ID3D11DeviceContext* deviceContext, boo
 // Sets the vertex shader, input layout and constant buffers
 // for future DirectX drawing
 // --------------------------------------------------------
-void BasicShader::SetShaderAndCBs(bool shaderValid, ID3D11DeviceContext* deviceContext, unsigned int constantBufferCount, SimpleVertexShaderStruct* obj_vsStruct)
+void BasicShader::SetShaderAndCBsVertex(bool shaderValid, ID3D11DeviceContext* deviceContext, unsigned int constantBufferCount, InputLayoutVertexShader* obj_vsStruct)
 {
 	// Is shader valid?
 	//if (!shaderValid) return;
@@ -864,9 +857,9 @@ void BasicShader::SetShaderAndCBs(bool shaderValid, ID3D11DeviceContext* deviceC
 	for (unsigned int i = 0; i < constantBufferCount; i++)
 	{
 		deviceContext->VSSetConstantBuffers(
-		s_shaderVecs.constantBuffers[i].BindIndex,
+		s_shaderVecsVertex.constantBuffers[i].BindIndex,
 			1,
-			&s_shaderVecs.constantBuffers[i].ConstantBuffer);
+			&s_shaderVecsVertex.constantBuffers[i].ConstantBuffer);
 	}
 
 	constanBufferCount1 = constantBufferCount;
@@ -877,7 +870,7 @@ void BasicShader::SetShaderAndCBs(bool shaderValid, ID3D11DeviceContext* deviceC
 // Sets the vertex shader, input layout and constant buffers
 // for future DirectX drawing
 // --------------------------------------------------------
-void BasicShader::SetShaderAndCBsPixel(bool shaderValid, ID3D11DeviceContext* deviceContext, unsigned int constantBufferCount, SimplePixelShaderStruct* obj_psStruct)
+void BasicShader::SetShaderAndCBsPixel(bool shaderValid, ID3D11DeviceContext* deviceContext, unsigned int constantBufferCount, PixelShader* obj_psStruct)
 {
 	// Is shader valid?
 	//if (!shaderValid) return;

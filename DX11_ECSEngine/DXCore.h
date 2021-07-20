@@ -59,9 +59,9 @@ public:
 	// - Lighting (Point & Dir)
 	// - Texture (Diffuse and Specular maps effect created using BasicSampler)
 	// --------------------------------------------------------------------------
-	void Draw(RendererMainVars* obj_renderer, BasicShader* obj_refShader, CameraComponents* obj_matrices, SimpleShaderVariables* obj_shaderVars,
-		SimpleShaderPixelVariables* obj_pixShaderVars, SimpleVertexShaderStruct* obj_vsStruct, 
-		SimplePixelShaderStruct* obj_PSStruct, entt::registry& registry, TimeData objtime, SkyShader* obj_SkyShader, GameEntities* obj_BoneDatMesh);
+	void Draw(RendererMainVars* obj_renderer, BasicShader* obj_refShader, CameraComponents* obj_matrices, VertexShaderVars* obj_shaderVars,
+		PixelShaderVars* obj_pixShaderVars, InputLayoutVertexShader* obj_vsStruct, 
+		PixelShader* obj_PSStruct, entt::registry& registry, TimeData objtime, SkyShader* obj_SkyShader, GameEntities* obj_BoneDatMesh);
 
 	void DrawSky(entt::registry& registry, RendererMainVars* obj_renderer, ID3D11SamplerState* sampler, SkyShader& obj_SkyShader, CameraComponents* cam_Comp, TextureData* tex_Comp);
 

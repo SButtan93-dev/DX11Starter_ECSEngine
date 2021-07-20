@@ -1,12 +1,11 @@
 #include "SkyShader.h"
 #include "SystemsPlan.h"
 
-SystemsPlan* SystemsPlan::Plan = 0;
+SystemsPlan* SystemsPlan::Plan = 0; // singleton
 
-ISimpleShader* s_ShaderObj = new ISimpleShader();
+BasicShader* s_ShaderObj = new BasicShader(); 
 
 SkyShader* sky_obj = new SkyShader();
-
 
 SystemsPlan::SystemsPlan()
 {
@@ -17,9 +16,7 @@ SystemsPlan::SystemsPlan()
 SystemsPlan::~SystemsPlan()
 {
 	delete s_ShaderObj;
-
 	delete sky_obj;
-
 }
 
 
@@ -60,9 +57,9 @@ void SystemsPlan::RunDXCore(entt::registry & registry, GameEntities* obj_MeshBon
 }
 
 
-//------------------------------------------------------------------------------
+//--------------------------------------------
 // Initialize most of the shader varibales.
-//------------------------------------------------------------------------------
+//--------------------------------------------
 entt::registry& SystemsPlan::InitShaderVars(entt::registry& registry)
 {
 	return s_ShaderObj->InitShaderBegin(registry);
@@ -70,31 +67,31 @@ entt::registry& SystemsPlan::InitShaderVars(entt::registry& registry)
 
 
 // -----------------------------------------------------------
-// Create vertex shader file using SimpleShader class
+// Create vertex shader file using BasicShader class
 // Could be expanded as a library for more vertex shader files
 // -----------------------------------------------------------
-entt::registry& SystemsPlan::CreateBasicVertexShader(entt::registry& registry)
+void SystemsPlan::CreateBasicVertexShader(entt::registry& registry)
 {
-	return s_ShaderObj->LoadVertexShaderFile(registry);
+	s_ShaderObj->LoadVertexShaderFile(registry);
 }
 
 
 // -----------------------------------------------------------
-// Create pixel shader file using SimpleShader class
+// Create pixel shader file using BasicShader class
 // Could be expanded as a library for more pixel shader files
 // -----------------------------------------------------------
-entt::registry & SystemsPlan::CreateBasicPixelShader(entt::registry & registry)
+void SystemsPlan::CreateBasicPixelShader(entt::registry & registry)
 {
-	return s_ShaderObj->LoadPixelShaderFile(registry);
+	s_ShaderObj->LoadPixelShaderFile(registry);
 }
 
 
 // ---------------------------------------------
 // Create projection matrix and set perspective
 // ---------------------------------------------
-entt::registry & SystemsPlan::CreateMatricesGeometry(entt::registry & registry)
+void SystemsPlan::CreateMatricesGeometry(entt::registry & registry)
 {
-	return s_ShaderObj->CreateMatrices(registry);
+	 s_ShaderObj->CreateMatrices(registry);
 }
 
 

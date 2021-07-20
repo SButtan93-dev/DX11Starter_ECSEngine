@@ -12,7 +12,7 @@ SkyShader::~SkyShader()
 	for (unsigned int i = 0; i < constanBufferCount2; i++)
 	{
 		//s_shaderVecs.constantBuffers[i].ConstantBuffer->Release();
-		s_shaderVecsPixelSky.constantBuffers[i].ConstantBuffer = s_shaderVecsSky.constantBuffers[i].ConstantBuffer;
+		s_shaderVecsPixelSky.constantBuffers[i].ConstantBuffer = s_shaderVecsVertexSky.constantBuffers[i].ConstantBuffer;
 		s_shaderVecsPixelSky.constantBuffers[i].ConstantBuffer->Release();
 		delete[] s_shaderVecsPixelSky.constantBuffers[i].LocalDataBuffer;
 	}
@@ -37,27 +37,27 @@ SkyShader::~SkyShader()
 	// Handle constant buffers and local data buffers
 	for (unsigned int i = 0; i < constanBufferCount2; i++)
 	{
-		s_shaderVecsSky.constantBuffers[i].ConstantBuffer->Release();
-		delete[] s_shaderVecsSky.constantBuffers[i].LocalDataBuffer;
+		s_shaderVecsVertexSky.constantBuffers[i].ConstantBuffer->Release();
+		delete[] s_shaderVecsVertexSky.constantBuffers[i].LocalDataBuffer;
 	}
 
-	if (s_shaderVecsSky.constantBuffers)
+	if (s_shaderVecsVertexSky.constantBuffers)
 	{
-		delete[] s_shaderVecsSky.constantBuffers;
+		delete[] s_shaderVecsVertexSky.constantBuffers;
 		constanBufferCount2 = 0;
 	}
 
-	for (unsigned int i = 0; i < s_shaderVecsSky.shaderResourceViews.size(); i++)
-		delete s_shaderVecsSky.shaderResourceViews[i];
+	for (unsigned int i = 0; i < s_shaderVecsVertexSky.shaderResourceViews.size(); i++)
+		delete s_shaderVecsVertexSky.shaderResourceViews[i];
 
-	for (unsigned int i = 0; i < s_shaderVecsSky.samplerStates.size(); i++)
-		delete s_shaderVecsSky.samplerStates[i];
+	for (unsigned int i = 0; i < s_shaderVecsVertexSky.samplerStates.size(); i++)
+		delete s_shaderVecsVertexSky.samplerStates[i];
 
 	// Clean up tables
-	s_shaderVecsSky.varTable.clear();
-	s_shaderVecsSky.cbTable.clear();
-	s_shaderVecsSky.samplerTable.clear();
-	s_shaderVecsSky.textureTable.clear();
+	s_shaderVecsVertexSky.varTable.clear();
+	s_shaderVecsVertexSky.cbTable.clear();
+	s_shaderVecsVertexSky.samplerTable.clear();
+	s_shaderVecsVertexSky.textureTable.clear();
 }
 
 
@@ -73,7 +73,7 @@ bool SkyShader::CreateVertexShaderSky(entt::registry& registry)
 
 	auto s_mainShaderComp = registry.view<RendererMainVars>();
 
-	auto mycomp = registry.view<SimpleShaderVertexVariablesSky, SkyVarsVertexShader>();
+	auto mycomp = registry.view<SkyVS_Vars, SkyVarsVertexShader>();
 
 	entt::entity entity1;
 
@@ -91,21 +91,21 @@ bool SkyShader::CreateVertexShaderSky(entt::registry& registry)
 		entity2 = entity;
 	}
 
-	auto [c_simpleShaderVariables, c_simpleVertexShaderStruct] = registry.get<SimpleShaderVertexVariablesSky, SkyVarsVertexShader>(entity2);
+	auto [c_VertexShaderVars, c_InputLayoutVertexShader] = registry.get<SkyVS_Vars, SkyVarsVertexShader>(entity2);
 
 	// Create the shader from the blob
 	HRESULT result = c_rendererMainVars.device->CreateVertexShader(
-		c_simpleShaderVariables.shaderBlob->GetBufferPointer(),
-		c_simpleShaderVariables.shaderBlob->GetBufferSize(),
+		c_VertexShaderVars.shaderBlob->GetBufferPointer(),
+		c_VertexShaderVars.shaderBlob->GetBufferSize(),
 		0,
-		&c_simpleVertexShaderStruct.shader);
+		&c_InputLayoutVertexShader.shader);
 
 	// Did the creation work?
 	if (result != S_OK)
 		return false;
 
 	// Do we already have an input layout?
-	if (c_simpleVertexShaderStruct.inputLayout)
+	if (c_InputLayoutVertexShader.inputLayout)
 		return true;
 
 	// Vertex shader was created successfully, so we now use the
@@ -116,8 +116,8 @@ bool SkyShader::CreateVertexShaderSky(entt::registry& registry)
 	// Reflect shader info
 	ID3D11ShaderReflection* refl;
 	D3DReflect(
-		c_simpleShaderVariables.shaderBlob->GetBufferPointer(),
-		c_simpleShaderVariables.shaderBlob->GetBufferSize(),
+		c_VertexShaderVars.shaderBlob->GetBufferPointer(),
+		c_VertexShaderVars.shaderBlob->GetBufferSize(),
 		IID_ID3D11ShaderReflection,
 		(void**)&refl);
 
@@ -156,7 +156,7 @@ bool SkyShader::CreateVertexShaderSky(entt::registry& registry)
 			elementDesc.InputSlotClass = D3D11_INPUT_PER_INSTANCE_DATA;
 			elementDesc.InstanceDataStepRate = 1;
 
-			c_simpleVertexShaderStruct.perInstanceCompatible = true;
+			c_InputLayoutVertexShader.perInstanceCompatible = true;
 		}
 
 		// Determine DXGI format
@@ -193,15 +193,15 @@ bool SkyShader::CreateVertexShaderSky(entt::registry& registry)
 	HRESULT hr = c_rendererMainVars.device->CreateInputLayout(
 		&inputLayoutDesc[0],
 		(unsigned int)inputLayoutDesc.size(),
-		c_simpleShaderVariables.shaderBlob->GetBufferPointer(),
-		c_simpleShaderVariables.shaderBlob->GetBufferSize(),
-		&c_simpleVertexShaderStruct.inputLayout);
+		c_VertexShaderVars.shaderBlob->GetBufferPointer(),
+		c_VertexShaderVars.shaderBlob->GetBufferSize(),
+		&c_InputLayoutVertexShader.inputLayout);
 
 	registry.replace<RendererMainVars>(entity1, c_rendererMainVars.swapChain, c_rendererMainVars.device,
 		c_rendererMainVars.context, c_rendererMainVars.backBufferRTV, c_rendererMainVars.depthStencilView);
 
-	registry.replace<SkyVarsVertexShader>(entity2, c_simpleVertexShaderStruct.perInstanceCompatible, c_simpleVertexShaderStruct.inputLayout,
-		c_simpleVertexShaderStruct.shader);
+	registry.replace<SkyVarsVertexShader>(entity2, c_InputLayoutVertexShader.perInstanceCompatible, c_InputLayoutVertexShader.inputLayout,
+		c_InputLayoutVertexShader.shader);
 
 	// All done, clean up
 	refl->Release();
@@ -223,7 +223,7 @@ bool SkyShader::CreatePixelShaderSky(entt::registry& registry)
 	entt::entity ps_entity;
 	auto mycomp = registry.view<RendererMainVars>();
 
-	auto mycomp2 = registry.view<SkyVarsPixelShader, SimpleShaderPixelVariablesSky>();
+	auto mycomp2 = registry.view<SkyVarsPixelShader, SkyPS_Vars>();
 
 	for (auto entity : mycomp)
 	{
@@ -237,7 +237,7 @@ bool SkyShader::CreatePixelShaderSky(entt::registry& registry)
 
 	auto& c_win = mycomp.get<RendererMainVars>(gpu_main);
 
-	auto [c_pixStruct, c_pixVars] = mycomp2.get<SkyVarsPixelShader, SimpleShaderPixelVariablesSky>(ps_entity);
+	auto [c_pixStruct, c_pixVars] = mycomp2.get<SkyVarsPixelShader, SkyPS_Vars>(ps_entity);
 
 	// Create the shader from the blob
 	HRESULT result = c_win.device->CreatePixelShader(
@@ -256,15 +256,15 @@ bool SkyShader::CreatePixelShaderSky(entt::registry& registry)
 // Part of creating vertex shader
 entt::registry& SkyShader::ReadFileToBlob_VertexSky(entt::registry& registry)
 {
-	auto mainShaderComp = registry.view<SimpleShaderVertexVariablesSky, ShaderStringsSky>();
+	auto mainShaderComp = registry.view<SkyVS_Vars, ShaderStringsSky>();
 
 	for (auto entity : mainShaderComp)
 	{
-		auto [mycomp, mycomp2] = mainShaderComp.get<SimpleShaderVertexVariablesSky, ShaderStringsSky>(entity);
+		auto [mycomp, mycomp2] = mainShaderComp.get<SkyVS_Vars, ShaderStringsSky>(entity);
 		// Load the shader to a blob and ensure it worked
 		D3DReadFileToBlob(mycomp2.SkyVertexShaderString, &mycomp.shaderBlob); // also returns HRESULT
 
-		registry.replace<SimpleShaderVertexVariablesSky>(entity, mycomp.shaderValid, mycomp.shaderBlob,
+		registry.replace<SkyVS_Vars>(entity, mycomp.shaderValid, mycomp.shaderBlob,
 			mycomp.ConstantBuffer, mycomp.constantBufferCount);
 	}
 	return registry;
@@ -274,12 +274,12 @@ entt::registry& SkyShader::ReadFileToBlob_VertexSky(entt::registry& registry)
 // Part of creating pixel shader
 entt::registry& SkyShader::ReadFileToBlob_PixelSky(entt::registry& registry)
 {
-	auto mainShaderComp = registry.view<SimpleShaderPixelVariablesSky>();
+	auto mainShaderComp = registry.view<SkyPS_Vars>();
 
 	LPCWSTR abc = L"SkyPS.cso"; // test
 	for (auto entity : mainShaderComp)
 	{
-		auto mycomp = mainShaderComp.get<SimpleShaderPixelVariablesSky>(entity);
+		auto mycomp = mainShaderComp.get<SkyPS_Vars>(entity);
 
 		// Load the shader to a blob and ensure it worked
 		HRESULT hr = D3DReadFileToBlob(abc, &mycomp.shaderBlob);
@@ -288,7 +288,7 @@ entt::registry& SkyShader::ReadFileToBlob_PixelSky(entt::registry& registry)
 			//return false;
 		}
 
-		registry.replace<SimpleShaderPixelVariablesSky>(entity, mycomp.shaderValid, mycomp.shaderBlob,
+		registry.replace<SkyPS_Vars>(entity, mycomp.shaderValid, mycomp.shaderBlob,
 			mycomp.ConstantBuffer, mycomp.constantBufferCount);
 	}
 	return registry;
@@ -360,11 +360,11 @@ entt::registry& SkyShader::LoadVertexShaderFileSky(entt::registry& registry)
 	{
 		auto& get_component = d_component.get<RendererMainVars>(entity);
 
-		auto mainShaderComp = registry.view<SimpleShaderVertexVariablesSky>();
+		auto mainShaderComp = registry.view<SkyVS_Vars>();
 
 		for (auto entity : mainShaderComp)
 		{
-			auto mycomp = mainShaderComp.get<SimpleShaderVertexVariablesSky>(entity);
+			auto mycomp = mainShaderComp.get<SkyVS_Vars>(entity);
 
 			// Create the shader - Calls an overloaded version of this abstract
 			// method in the appropriate child class
@@ -384,7 +384,7 @@ entt::registry& SkyShader::LoadVertexShaderFileSky(entt::registry& registry)
 
 			// Create resource arrays
 			mycomp.constantBufferCount = shaderDesc.ConstantBuffers;
-			s_shaderVecsSky.constantBuffers = new SimpleConstantBuffer[mycomp.constantBufferCount];
+			s_shaderVecsVertexSky.constantBuffers = new ConstantBufferInfo[mycomp.constantBufferCount];
 
 			// Handle bound resources (like shaders and samplers)
 			unsigned int resourceCount = shaderDesc.BoundResources;
@@ -400,24 +400,24 @@ entt::registry& SkyShader::LoadVertexShaderFileSky(entt::registry& registry)
 				case D3D_SIT_TEXTURE: // A texture resource
 				{
 					// Create the SRV wrapper
-					SimpleSRV* srv = new SimpleSRV();
+					BasicSRV* srv = new BasicSRV();
 					srv->BindIndex = resourceDesc.BindPoint;				// Shader bind point
-					srv->Index = (unsigned int)s_shaderVecsSky.shaderResourceViews.size();	// Raw index
+					srv->Index = (unsigned int)s_shaderVecsVertexSky.shaderResourceViews.size();	// Raw index
 
-					s_shaderVecsSky.textureTable.insert(std::pair<std::string, SimpleSRV*>(resourceDesc.Name, srv));
-					s_shaderVecsSky.shaderResourceViews.push_back(srv);
+					s_shaderVecsVertexSky.textureTable.insert(std::pair<std::string, BasicSRV*>(resourceDesc.Name, srv));
+					s_shaderVecsVertexSky.shaderResourceViews.push_back(srv);
 				}
 				break;
 
 				case D3D_SIT_SAMPLER: // A sampler resource
 				{
 					//Create the sampler wrapper
-					SimpleSampler* samp = new SimpleSampler();
+					BasicSampler* samp = new BasicSampler();
 					samp->BindIndex = resourceDesc.BindPoint;			// Shader bind point
-					samp->Index = (unsigned int)s_shaderVecsSky.samplerStates.size();	// Raw index
+					samp->Index = (unsigned int)s_shaderVecsVertexSky.samplerStates.size();	// Raw index
 
-					s_shaderVecsSky.samplerTable.insert(std::pair<std::string, SimpleSampler*>(resourceDesc.Name, samp));
-					s_shaderVecsSky.samplerStates.push_back(samp);
+					s_shaderVecsVertexSky.samplerTable.insert(std::pair<std::string, BasicSampler*>(resourceDesc.Name, samp));
+					s_shaderVecsVertexSky.samplerStates.push_back(samp);
 				}
 				break;
 				}
@@ -440,9 +440,9 @@ entt::registry& SkyShader::LoadVertexShaderFileSky(entt::registry& registry)
 				refl->GetResourceBindingDescByName(bufferDesc.Name, &bindDesc);
 
 				// Set up the buffer and put its pointer in the table
-				s_shaderVecsSky.constantBuffers[b].BindIndex = bindDesc.BindPoint;
-				s_shaderVecsSky.constantBuffers[b].Name = bufferDesc.Name;
-				s_shaderVecsSky.cbTable.insert(std::pair<std::string, SimpleConstantBuffer*>(bufferDesc.Name, &s_shaderVecsSky.constantBuffers[b]));
+				s_shaderVecsVertexSky.constantBuffers[b].BindIndex = bindDesc.BindPoint;
+				s_shaderVecsVertexSky.constantBuffers[b].Name = bufferDesc.Name;
+				s_shaderVecsVertexSky.cbTable.insert(std::pair<std::string, ConstantBufferInfo*>(bufferDesc.Name, &s_shaderVecsVertexSky.constantBuffers[b]));
 
 				// Create this constant buffer
 				D3D11_BUFFER_DESC newBuffDesc;
@@ -452,12 +452,12 @@ entt::registry& SkyShader::LoadVertexShaderFileSky(entt::registry& registry)
 				newBuffDesc.CPUAccessFlags = 0;
 				newBuffDesc.MiscFlags = 0;
 				newBuffDesc.StructureByteStride = 0;
-				get_component.device->CreateBuffer(&newBuffDesc, 0, &s_shaderVecsSky.constantBuffers[b].ConstantBuffer);
+				get_component.device->CreateBuffer(&newBuffDesc, 0, &s_shaderVecsVertexSky.constantBuffers[b].ConstantBuffer);
 
 				// Set up the data buffer for this constant buffer
-				s_shaderVecsSky.constantBuffers[b].Size = bufferDesc.Size;
-				s_shaderVecsSky.constantBuffers[b].LocalDataBuffer = new unsigned char[bufferDesc.Size];
-				ZeroMemory(s_shaderVecsSky.constantBuffers[b].LocalDataBuffer, bufferDesc.Size);
+				s_shaderVecsVertexSky.constantBuffers[b].Size = bufferDesc.Size;
+				s_shaderVecsVertexSky.constantBuffers[b].LocalDataBuffer = new unsigned char[bufferDesc.Size];
+				ZeroMemory(s_shaderVecsVertexSky.constantBuffers[b].LocalDataBuffer, bufferDesc.Size);
 
 				// Loop through all variables in this buffer
 				for (unsigned int v = 0; v < bufferDesc.Variables; v++)
@@ -471,7 +471,7 @@ entt::registry& SkyShader::LoadVertexShaderFileSky(entt::registry& registry)
 					var->GetDesc(&varDesc);
 
 					// Create the variable struct
-					SimpleShaderVariable varStruct;
+					ShaderVariableInfo varStruct;
 					varStruct.ConstantBufferIndex = b;
 					varStruct.ByteOffset = varDesc.StartOffset;
 					varStruct.Size = varDesc.Size;
@@ -480,12 +480,12 @@ entt::registry& SkyShader::LoadVertexShaderFileSky(entt::registry& registry)
 					std::string varName(varDesc.Name);
 
 					// Add this variable to the table and the constant buffer
-					s_shaderVecsSky.varTable.insert(std::pair<std::string, SimpleShaderVariable>(varName, varStruct));
-					s_shaderVecsSky.constantBuffers[b].Variables.push_back(varStruct);
+					s_shaderVecsVertexSky.varTable.insert(std::pair<std::string, ShaderVariableInfo>(varName, varStruct));
+					s_shaderVecsVertexSky.constantBuffers[b].Variables.push_back(varStruct);
 				}
 			}
 
-			registry.replace<SimpleShaderVertexVariablesSky>(entity, mycomp.shaderValid, mycomp.shaderBlob, mycomp.ConstantBuffer, mycomp.constantBufferCount);
+			registry.replace<SkyVS_Vars>(entity, mycomp.shaderValid, mycomp.shaderBlob, mycomp.ConstantBuffer, mycomp.constantBufferCount);
 
 			// All set
 			refl->Release();
@@ -511,11 +511,11 @@ entt::registry& SkyShader::LoadPixelShaderFileSky(entt::registry& registry)
 	{
 		RendererMainVars& get_component = d_component.get<RendererMainVars>(entity);
 
-		auto mainShaderComp = registry.view<SimpleShaderPixelVariablesSky>();
+		auto mainShaderComp = registry.view<SkyPS_Vars>();
 
 		for (auto entity : mainShaderComp)
 		{
-			auto mycomp = mainShaderComp.get<SimpleShaderPixelVariablesSky>(entity);
+			auto mycomp = mainShaderComp.get<SkyPS_Vars>(entity);
 
 			// Set up shader reflection to get information about
 			// this shader and its variables,  buffers, etc.
@@ -532,7 +532,7 @@ entt::registry& SkyShader::LoadPixelShaderFileSky(entt::registry& registry)
 
 			// Create resource arrays
 			mycomp.constantBufferCount = shaderDesc.ConstantBuffers;
-			s_shaderVecsPixelSky.constantBuffers = new SimpleConstantBuffer[mycomp.constantBufferCount];
+			s_shaderVecsPixelSky.constantBuffers = new ConstantBufferInfo[mycomp.constantBufferCount];
 
 			// Handle bound resources (like shaders and samplers)
 			unsigned int resourceCount = shaderDesc.BoundResources;
@@ -548,11 +548,11 @@ entt::registry& SkyShader::LoadPixelShaderFileSky(entt::registry& registry)
 				case D3D_SIT_TEXTURE: // A texture resource
 				{
 					// Create the SRV wrapper
-					SimpleSRV* srv = new SimpleSRV();
+					BasicSRV* srv = new BasicSRV();
 					srv->BindIndex = resourceDesc.BindPoint;				// Shader bind point
 					srv->Index = (unsigned int)s_shaderVecsPixelSky.shaderResourceViews.size();	// Raw index
 
-					s_shaderVecsPixelSky.textureTable.insert(std::pair<std::string, SimpleSRV*>(resourceDesc.Name, srv));
+					s_shaderVecsPixelSky.textureTable.insert(std::pair<std::string, BasicSRV*>(resourceDesc.Name, srv));
 					s_shaderVecsPixelSky.shaderResourceViews.push_back(srv);
 				}
 				break;
@@ -560,11 +560,11 @@ entt::registry& SkyShader::LoadPixelShaderFileSky(entt::registry& registry)
 				case D3D_SIT_SAMPLER: // A sampler resource
 				{
 					//Create the sampler wrapper
-					SimpleSampler* samp = new SimpleSampler();
+					BasicSampler* samp = new BasicSampler();
 					samp->BindIndex = resourceDesc.BindPoint;			// Shader bind point
 					samp->Index = (unsigned int)s_shaderVecsPixelSky.samplerStates.size();	// Raw index
 
-					s_shaderVecsPixelSky.samplerTable.insert(std::pair<std::string, SimpleSampler*>(resourceDesc.Name, samp));
+					s_shaderVecsPixelSky.samplerTable.insert(std::pair<std::string, BasicSampler*>(resourceDesc.Name, samp));
 					s_shaderVecsPixelSky.samplerStates.push_back(samp);
 				}
 				break;
@@ -590,7 +590,7 @@ entt::registry& SkyShader::LoadPixelShaderFileSky(entt::registry& registry)
 				// Set up the buffer and put its pointer in the table
 				s_shaderVecsPixelSky.constantBuffers[b].BindIndex = bindDesc.BindPoint;
 				s_shaderVecsPixelSky.constantBuffers[b].Name = bufferDesc.Name;
-				s_shaderVecsPixelSky.cbTable.insert(std::pair<std::string, SimpleConstantBuffer*>(bufferDesc.Name, &s_shaderVecsPixelSky.constantBuffers[b]));
+				s_shaderVecsPixelSky.cbTable.insert(std::pair<std::string, ConstantBufferInfo*>(bufferDesc.Name, &s_shaderVecsPixelSky.constantBuffers[b]));
 
 				// Create this constant buffer
 				D3D11_BUFFER_DESC newBuffDesc;
@@ -619,7 +619,7 @@ entt::registry& SkyShader::LoadPixelShaderFileSky(entt::registry& registry)
 					var->GetDesc(&varDesc);
 
 					// Create the variable struct
-					SimpleShaderVariable varStruct;
+					ShaderVariableInfo varStruct;
 					varStruct.ConstantBufferIndex = b;
 					varStruct.ByteOffset = varDesc.StartOffset;
 					varStruct.Size = varDesc.Size;
@@ -628,12 +628,12 @@ entt::registry& SkyShader::LoadPixelShaderFileSky(entt::registry& registry)
 					std::string varName(varDesc.Name);
 
 					// Add this variable to the table and the constant buffer
-					s_shaderVecsPixelSky.varTable.insert(std::pair<std::string, SimpleShaderVariable>(varName, varStruct));
+					s_shaderVecsPixelSky.varTable.insert(std::pair<std::string, ShaderVariableInfo>(varName, varStruct));
 					s_shaderVecsPixelSky.constantBuffers[b].Variables.push_back(varStruct);
 				}
 			}
 
-			registry.replace<SimpleShaderPixelVariablesSky>(entity, mycomp.shaderValid, mycomp.shaderBlob, mycomp.ConstantBuffer, mycomp.constantBufferCount);
+			registry.replace<SkyPS_Vars>(entity, mycomp.shaderValid, mycomp.shaderBlob, mycomp.ConstantBuffer, mycomp.constantBufferCount);
 
 			// All set
 			refl->Release();
@@ -652,11 +652,11 @@ entt::registry& SkyShader::LoadPixelShaderFileSky(entt::registry& registry)
 void SkyShader::SetDataVertex(std::string name, const void* data, unsigned int size)
 {
 	// Look for the variable and verify
-	SimpleShaderVariable* var = FindVariable(name, size);
+	ShaderVariableInfo* var = FindVariable(name, size);
 
 	// Set the data in the local data buffer
 	memcpy(
-		s_shaderVecsSky.constantBuffers[var->ConstantBufferIndex].LocalDataBuffer + var->ByteOffset,
+		s_shaderVecsVertexSky.constantBuffers[var->ConstantBufferIndex].LocalDataBuffer + var->ByteOffset,
 		data,
 		size);
 }
@@ -671,7 +671,7 @@ void SkyShader::SetDataVertex(std::string name, const void* data, unsigned int s
 void SkyShader::SetDataPixel(std::string name, const DirectX::XMFLOAT3 data, unsigned int size)
 {
 	// Look for the variable and verify
-	SimpleShaderVariable* var = FindVariablePixel(name, size);
+	ShaderVariableInfo* var = FindVariablePixel(name, size);
 
 	// Set the data in the local data buffer
 	memcpy(
@@ -689,18 +689,18 @@ void SkyShader::SetDataPixel(std::string name, const DirectX::XMFLOAT3 data, uns
 //-size - the size of the variable (for verification), or -1 to bypass
 //-return vertex shader variable from the table
 //--------------------------------------------------------
-SimpleShaderVariable* SkyShader::FindVariable(std::string name, int size)
+ShaderVariableInfo* SkyShader::FindVariable(std::string name, int size)
 {
 	// Look for the key
-	std::unordered_map<std::string, SimpleShaderVariable>::iterator result =
-		s_shaderVecsSky.varTable.find(name);
+	std::unordered_map<std::string, ShaderVariableInfo>::iterator result =
+		s_shaderVecsVertexSky.varTable.find(name);
 
 	// Did we find the key?
-	if (result == s_shaderVecsSky.varTable.end())
+	if (result == s_shaderVecsVertexSky.varTable.end())
 		return 0;
 
 	// Grab the result from the iterator
-	SimpleShaderVariable* var = &(result->second);
+	ShaderVariableInfo* var = &(result->second);
 
 	// Is the data size correct ?
 	if (size > 0 && var->Size != size)
@@ -719,10 +719,10 @@ SimpleShaderVariable* SkyShader::FindVariable(std::string name, int size)
 //-size - the size of the variable (for verification), or -1 to bypass
 //-return pixel shader variable from the table
 //--------------------------------------------------------
-SimpleShaderVariable* SkyShader::FindVariablePixel(std::string name, int size)
+ShaderVariableInfo* SkyShader::FindVariablePixel(std::string name, int size)
 {
 	// Look for the key
-	std::unordered_map<std::string, SimpleShaderVariable>::iterator result =
+	std::unordered_map<std::string, ShaderVariableInfo>::iterator result =
 		s_shaderVecsPixelSky.varTable.find(name);
 
 	// Did we find the key?
@@ -730,7 +730,7 @@ SimpleShaderVariable* SkyShader::FindVariablePixel(std::string name, int size)
 		return 0;
 
 	// Grab the result from the iterator
-	SimpleShaderVariable* var = &(result->second);
+	ShaderVariableInfo* var = &(result->second);
 
 	// Is the data size correct ?
 	if (size > 0 && var->Size != size)
@@ -744,14 +744,14 @@ SimpleShaderVariable* SkyShader::FindVariablePixel(std::string name, int size)
 void SkyShader::FindVariableBasic(std::string name, ID3D11SamplerState* samplerState, ID3D11DeviceContext* deviceContext)
 {
 	// Look for the key
-	std::unordered_map<std::string, SimpleSampler*>::iterator result =
+	std::unordered_map<std::string, BasicSampler*>::iterator result =
 		s_shaderVecsPixelSky.samplerTable.find(name);
 
 	// Did we find the key?
 	if (result == s_shaderVecsPixelSky.samplerTable.end())
 		return;
 
-	const SimpleSampler* sampInfo = result->second;
+	const BasicSampler* sampInfo = result->second;
 
 	if (sampInfo == 0)
 		return;
@@ -764,14 +764,14 @@ void SkyShader::FindVariableBasic(std::string name, ID3D11SamplerState* samplerS
 void SkyShader::FindVariableTexture(std::string name, ID3D11ShaderResourceView* srv, ID3D11DeviceContext* deviceContext)
 {
 	// Look for the key
-	std::unordered_map<std::string, SimpleSRV*>::iterator result =
+	std::unordered_map<std::string, BasicSRV*>::iterator result =
 		s_shaderVecsPixelSky.textureTable.find(name);
 
 	// Did we find the key?
 	if (result == s_shaderVecsPixelSky.textureTable.end())
 		return;
 
-	const SimpleSRV* srvInfo = result->second;
+	const BasicSRV* srvInfo = result->second;
 
 	if (srvInfo == 0)
 		return;
@@ -796,8 +796,8 @@ void SkyShader::CopyAllBufferData(ID3D11DeviceContext* deviceContext, bool shade
 	{
 		// Copy the entire local data buffer
 		deviceContext->UpdateSubresource(
-			s_shaderVecsSky.constantBuffers[i].ConstantBuffer, 0, 0,
-			s_shaderVecsSky.constantBuffers[i].LocalDataBuffer, 0, 0);
+			s_shaderVecsVertexSky.constantBuffers[i].ConstantBuffer, 0, 0,
+			s_shaderVecsVertexSky.constantBuffers[i].LocalDataBuffer, 0, 0);
 	}
 }
 
@@ -836,9 +836,9 @@ void SkyShader::SetShaderAndCBs(bool shaderValid, ID3D11DeviceContext* deviceCon
 	for (unsigned int i = 0; i < constantBufferCount; i++)
 	{
 		deviceContext->VSSetConstantBuffers(
-			s_shaderVecsSky.constantBuffers[i].BindIndex,
+			s_shaderVecsVertexSky.constantBuffers[i].BindIndex,
 			1,
-			&s_shaderVecsSky.constantBuffers[i].ConstantBuffer);
+			&s_shaderVecsVertexSky.constantBuffers[i].ConstantBuffer);
 	}
 
 	constanBufferCount2 = constantBufferCount;

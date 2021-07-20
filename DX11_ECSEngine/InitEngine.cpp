@@ -82,7 +82,7 @@ void InitEngine::InitEntt(RenderWindow mystruct)
 	Mesh->InitTexture(m_rendererRegistry);
 
 	// Enter the number of mesh entities
-	unsigned int m_count = 2000;
+	unsigned int m_count = 1000;
 
 	// Create empty mesh entities
 	for (unsigned int i = 0; i < m_count; i++)
@@ -117,24 +117,24 @@ void InitEngine::InitEntt(RenderWindow mystruct)
 // Try releasing the GPU variables from the entities.
 void InitEngine::Clean()
 {
-	auto ref_CompPS = m_rendererRegistry.view<SimplePixelShaderStruct>();
+	auto ref_CompPS = m_rendererRegistry.view<PixelShader>();
 
 	for (auto entity : ref_CompPS)
 	{
-		auto ps = ref_CompPS.get<SimplePixelShaderStruct>(entity);
+		auto ps = ref_CompPS.get<PixelShader>(entity);
 
 		ps.shader->Release();
 		ps.shader = 0;
-		m_rendererRegistry.replace<SimplePixelShaderStruct>(entity, ps.shader);
+		m_rendererRegistry.replace<PixelShader>(entity, ps.shader);
 		m_rendererRegistry.remove_all(entity);
 		m_rendererRegistry.destroy(entity);
 	}
 
-	auto ref_CompsVS = m_rendererRegistry.view<SimpleVertexShaderStruct>();
+	auto ref_CompsVS = m_rendererRegistry.view<InputLayoutVertexShader>();
 
 	for (auto entity : ref_CompsVS)
 	{
-		auto vs = ref_CompsVS.get<SimpleVertexShaderStruct>(entity);
+		auto vs = ref_CompsVS.get<InputLayoutVertexShader>(entity);
 
 		vs.shader->Release();
 		vs.shader = 0;
@@ -142,16 +142,16 @@ void InitEngine::Clean()
 		vs.inputLayout->Release();
 		vs.inputLayout = 0;
 
-		m_rendererRegistry.replace<SimpleVertexShaderStruct>(entity, vs.perInstanceCompatible, vs.inputLayout, vs.shader);
+		m_rendererRegistry.replace<InputLayoutVertexShader>(entity, vs.perInstanceCompatible, vs.inputLayout, vs.shader);
 		m_rendererRegistry.remove_all(entity);
 		m_rendererRegistry.destroy(entity);
 	}
 
-	auto ref_BufVS = m_rendererRegistry.view<SimpleShaderVariables>();
+	auto ref_BufVS = m_rendererRegistry.view<VertexShaderVars>();
 
 	for (auto entity : ref_BufVS)
 	{
-		auto buf_vs = ref_BufVS.get<SimpleShaderVariables>(entity);
+		auto buf_vs = ref_BufVS.get<VertexShaderVars>(entity);
 
 		buf_vs.shaderBlob->Release();
 		buf_vs.shaderBlob = 0;
@@ -159,24 +159,24 @@ void InitEngine::Clean()
 		if (buf_vs.ConstantBuffer != nullptr)
 			buf_vs.ConstantBuffer->Release();
 
-		m_rendererRegistry.replace<SimpleShaderVariables>(entity, buf_vs.shaderValid, buf_vs.shaderBlob, buf_vs.ConstantBuffer, buf_vs.constantBufferCount);
-		m_rendererRegistry.remove<SimpleShaderVariables>(entity);
+		m_rendererRegistry.replace<VertexShaderVars>(entity, buf_vs.shaderValid, buf_vs.shaderBlob, buf_vs.ConstantBuffer, buf_vs.constantBufferCount);
+		m_rendererRegistry.remove<VertexShaderVars>(entity);
 		m_rendererRegistry.destroy(entity);
 	}
 
-	auto ref_BufPS = m_rendererRegistry.view<SimpleShaderPixelVariables>();
+	auto ref_BufPS = m_rendererRegistry.view<PixelShaderVars>();
 
 	for (auto entity : ref_BufPS)
 	{
-		auto buf_ps = ref_BufPS.get<SimpleShaderPixelVariables>(entity);
+		auto buf_ps = ref_BufPS.get<PixelShaderVars>(entity);
 
 		buf_ps.shaderBlob->Release();
 		buf_ps.shaderBlob = 0;
 		if (buf_ps.ConstantBuffer != nullptr)
 			buf_ps.ConstantBuffer->Release();
 
-		m_rendererRegistry.replace<SimpleShaderPixelVariables>(entity, buf_ps.shaderValid, buf_ps.shaderBlob, buf_ps.ConstantBuffer, buf_ps.constantBufferCount);
-		m_rendererRegistry.remove<SimpleShaderPixelVariables>(entity);
+		m_rendererRegistry.replace<PixelShaderVars>(entity, buf_ps.shaderValid, buf_ps.shaderBlob, buf_ps.ConstantBuffer, buf_ps.constantBufferCount);
+		m_rendererRegistry.remove<PixelShaderVars>(entity);
 		m_rendererRegistry.destroy(entity);
 	}
 

@@ -2,7 +2,7 @@
 #include "entt/entt.hpp"
 #include"DXCore.h"
 #include "Components.h"
-#include "SimpleShader.h"
+#include "BasicShader.h"
 #include "SkyShader.h"
 #include "GameEntities.h"
 #include "Camera.h"
@@ -13,7 +13,7 @@ public:
 	SystemsPlan();
 	~SystemsPlan();
 
-	static SystemsPlan* Plan;
+	static SystemsPlan* Plan; // singleton
 
 	Camera camera;
 
@@ -23,9 +23,9 @@ public:
 
 	entt::registry& InitShaderVars(entt::registry& registry);
 
-	entt::registry & CreateBasicVertexShader(entt::registry & registry);
-	entt::registry & CreateBasicPixelShader(entt::registry & registry);
-	entt::registry & CreateMatricesGeometry(entt::registry& registry);
+	void CreateBasicVertexShader(entt::registry & registry);
+	void CreateBasicPixelShader(entt::registry & registry);
+	void CreateMatricesGeometry(entt::registry& registry);
 
 	void CreateVertexSkyShader(entt::registry& registry);
 	void CreatePixelSkyShader(entt::registry& registry);
