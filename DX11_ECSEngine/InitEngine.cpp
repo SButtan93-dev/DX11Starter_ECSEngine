@@ -65,15 +65,15 @@ void InitEngine::InitEntt(RenderWindow mystruct)
 
 	SystemsPlan::Plan->InitShaderVars(m_rendererRegistry);
 
-	SystemsPlan::Plan->LoadCreateShader(m_rendererRegistry);
+	SystemsPlan::Plan->CreateBasicVertexShader(m_rendererRegistry); // Mesh Vs
 
-	SystemsPlan::Plan->LoadCreatePixelShader(m_rendererRegistry);
+	SystemsPlan::Plan->CreateBasicPixelShader(m_rendererRegistry); // Mesh PS
 
-	SystemsPlan::Plan->LoadCreateShaderSky(m_rendererRegistry); // Sky
+	SystemsPlan::Plan->CreateVertexSkyShader(m_rendererRegistry); // Sky VS
 
-	SystemsPlan::Plan->LoadCreatePixelShaderSky(m_rendererRegistry); // Sky
+	SystemsPlan::Plan->CreatePixelSkyShader(m_rendererRegistry); // Sky PS
 
-	SystemsPlan::Plan->SetSkyShaderVars(m_rendererRegistry); // Sky
+	SystemsPlan::Plan->SetSkyShaderVars(m_rendererRegistry); // Sky texture map
 
 	SystemsPlan::Plan->CreateMatricesGeometry(m_rendererRegistry);
 
@@ -82,55 +82,59 @@ void InitEngine::InitEntt(RenderWindow mystruct)
 	Mesh->InitTexture(m_rendererRegistry);
 
 	// Enter the number of mesh entities
-	unsigned int m_count = 200;
+	unsigned int m_count = 1000;
 
 	// Create empty mesh entities
 	for (unsigned int i = 0; i < m_count; i++)
 	{
-		entt::entity newEntity = m_rendererRegistry.create();
-		m_rendererRegistry.emplace<MeshRenderVars>(newEntity, nullptr, nullptr, 0);
-		DirectX::XMFLOAT4X4 abc;
-		DirectX::XMStoreFloat4x4(&abc, DirectX::XMMatrixIdentity());
-		m_rendererRegistry.emplace<MeshEntityData>(newEntity, abc, DirectX::XMFLOAT3(0.0f, 0.0f, 0.0f), DirectX::XMFLOAT3(0.0f, 0.0f, 0.0f), DirectX::XMFLOAT3(0.0f, 0.0f, 0.0f));
+		entt::entity meshEntity = m_rendererRegistry.create();
+		m_rendererRegistry.emplace<MeshRenderVars>(meshEntity, nullptr, nullptr, 0);
+		DirectX::XMFLOAT4X4 temp_wm;
+		DirectX::XMStoreFloat4x4(&temp_wm, DirectX::XMMatrixIdentity());
+		m_rendererRegistry.emplace<MeshEntityData>(meshEntity, temp_wm, DirectX::XMFLOAT3(0.0f, 0.0f, 0.0f), DirectX::XMFLOAT3(0.0f, 0.0f, 0.0f), DirectX::XMFLOAT3(0.0f, 0.0f, 0.0f));
+		std::map<std::string, UINT> mBoneMappingTemp;
+		std::vector<BoneInfo> mBoneInfo;
+		DirectX::XMMATRIX temp_NodeTransform;
+		m_rendererRegistry.emplace<MeshBoneData>(meshEntity, mBoneMappingTemp, mBoneInfo, UINT(0), temp_NodeTransform);
 	}
 
 	// Load mesh entities 'm_count' times in the buffers.
-	Mesh->LoadMesh("Models/Sphere.obj", m_rendererRegistry);
+	Mesh->LoadMesh("Models/silly_dancing.fbx", m_rendererRegistry);
 
-	entt::entity newEntity = m_rendererRegistry.create();
-	m_rendererRegistry.emplace<MeshRenderVarsSky>(newEntity, nullptr, nullptr, 0);
-	DirectX::XMFLOAT4X4 abc;
-	DirectX::XMStoreFloat4x4(&abc, DirectX::XMMatrixIdentity());
-	m_rendererRegistry.emplace<MeshEntityDataSky>(newEntity, abc, DirectX::XMFLOAT3(0.0f, 0.0f, 0.0f), DirectX::XMFLOAT3(0.0f, 0.0f, 0.0f), DirectX::XMFLOAT3(0.0f, 0.0f, 0.0f));
 	// Sky
+	entt::entity skyEntity = m_rendererRegistry.create();
+	m_rendererRegistry.emplace<MeshRenderVarsSky>(skyEntity, nullptr, nullptr, 0);
+	DirectX::XMFLOAT4X4 temp_wm;
+	DirectX::XMStoreFloat4x4(&temp_wm, DirectX::XMMatrixIdentity());
+	m_rendererRegistry.emplace<MeshEntityDataSky>(skyEntity, temp_wm, DirectX::XMFLOAT3(0.0f, 0.0f, 0.0f), DirectX::XMFLOAT3(0.0f, 0.0f, 0.0f), DirectX::XMFLOAT3(0.0f, 0.0f, 0.0f));
 	Mesh->LoadMeshSky("Models/Cube.obj", m_rendererRegistry);
 
 	// All set, pass the registry 
 	// to core game loop system
-	SystemsPlan::Plan->RunDXCore(m_rendererRegistry);
+	SystemsPlan::Plan->RunDXCore(m_rendererRegistry, Mesh);
 }
 
 // Try releasing the GPU variables from the entities.
 void InitEngine::Clean()
 {
-	auto ref_CompPS = m_rendererRegistry.view<SimplePixelShaderStruct>();
+	auto ref_CompPS = m_rendererRegistry.view<PixelShader>();
 
 	for (auto entity : ref_CompPS)
 	{
-		auto ps = ref_CompPS.get<SimplePixelShaderStruct>(entity);
+		auto ps = ref_CompPS.get<PixelShader>(entity);
 
 		ps.shader->Release();
 		ps.shader = 0;
-		m_rendererRegistry.replace<SimplePixelShaderStruct>(entity, ps.shader);
+		m_rendererRegistry.replace<PixelShader>(entity, ps.shader);
 		m_rendererRegistry.remove_all(entity);
 		m_rendererRegistry.destroy(entity);
 	}
 
-	auto ref_CompsVS = m_rendererRegistry.view<SimpleVertexShaderStruct>();
+	auto ref_CompsVS = m_rendererRegistry.view<InputLayoutVertexShader>();
 
 	for (auto entity : ref_CompsVS)
 	{
-		auto vs = ref_CompsVS.get<SimpleVertexShaderStruct>(entity);
+		auto vs = ref_CompsVS.get<InputLayoutVertexShader>(entity);
 
 		vs.shader->Release();
 		vs.shader = 0;
@@ -138,16 +142,16 @@ void InitEngine::Clean()
 		vs.inputLayout->Release();
 		vs.inputLayout = 0;
 
-		m_rendererRegistry.replace<SimpleVertexShaderStruct>(entity, vs.perInstanceCompatible, vs.inputLayout, vs.shader);
+		m_rendererRegistry.replace<InputLayoutVertexShader>(entity, vs.perInstanceCompatible, vs.inputLayout, vs.shader);
 		m_rendererRegistry.remove_all(entity);
 		m_rendererRegistry.destroy(entity);
 	}
 
-	auto ref_BufVS = m_rendererRegistry.view<SimpleShaderVariables>();
+	auto ref_BufVS = m_rendererRegistry.view<VertexShaderVars>();
 
 	for (auto entity : ref_BufVS)
 	{
-		auto buf_vs = ref_BufVS.get<SimpleShaderVariables>(entity);
+		auto buf_vs = ref_BufVS.get<VertexShaderVars>(entity);
 
 		buf_vs.shaderBlob->Release();
 		buf_vs.shaderBlob = 0;
@@ -155,24 +159,40 @@ void InitEngine::Clean()
 		if (buf_vs.ConstantBuffer != nullptr)
 			buf_vs.ConstantBuffer->Release();
 
-		m_rendererRegistry.replace<SimpleShaderVariables>(entity, buf_vs.shaderValid, buf_vs.shaderBlob, buf_vs.ConstantBuffer, buf_vs.constantBufferCount);
-		m_rendererRegistry.remove<SimpleShaderVariables>(entity);
+		m_rendererRegistry.replace<VertexShaderVars>(entity, buf_vs.shaderValid, buf_vs.shaderBlob, buf_vs.ConstantBuffer, buf_vs.constantBufferCount);
+		m_rendererRegistry.remove<VertexShaderVars>(entity);
 		m_rendererRegistry.destroy(entity);
 	}
 
-	auto ref_BufPS = m_rendererRegistry.view<SimpleShaderPixelVariables>();
+	auto ref_BufPS = m_rendererRegistry.view<PixelShaderVars>();
 
 	for (auto entity : ref_BufPS)
 	{
-		auto buf_ps = ref_BufPS.get<SimpleShaderPixelVariables>(entity);
+		auto buf_ps = ref_BufPS.get<PixelShaderVars>(entity);
 
 		buf_ps.shaderBlob->Release();
 		buf_ps.shaderBlob = 0;
 		if (buf_ps.ConstantBuffer != nullptr)
 			buf_ps.ConstantBuffer->Release();
 
-		m_rendererRegistry.replace<SimpleShaderPixelVariables>(entity, buf_ps.shaderValid, buf_ps.shaderBlob, buf_ps.ConstantBuffer, buf_ps.constantBufferCount);
-		m_rendererRegistry.remove<SimpleShaderPixelVariables>(entity);
+		m_rendererRegistry.replace<PixelShaderVars>(entity, buf_ps.shaderValid, buf_ps.shaderBlob, buf_ps.ConstantBuffer, buf_ps.constantBufferCount);
+		m_rendererRegistry.remove<PixelShaderVars>(entity);
+		m_rendererRegistry.destroy(entity);
+	}
+
+	auto meshvars = m_rendererRegistry.view<MeshRenderVars>();
+
+	for (auto entity : meshvars)
+	{
+		auto mesh_vars = meshvars.get<MeshRenderVars>(entity);
+
+		mesh_vars.ib = 0;
+		mesh_vars.ib->Release();
+		mesh_vars.vb = 0;
+		mesh_vars.vb->Release();
+
+		m_rendererRegistry.replace<MeshRenderVars>(entity, mesh_vars.vb, mesh_vars.ib, mesh_vars.numIndices);
+		m_rendererRegistry.remove<MeshRenderVars>(entity);
 		m_rendererRegistry.destroy(entity);
 	}
 

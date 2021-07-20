@@ -2,20 +2,22 @@
 #include <Windows.h>
 #include <d3d11.h>
 #include <string>
-#include <d3dcompiler.h>
-#include <DirectXMath.h>
-
-#pragma comment(lib, "d3d11.lib")
-
+#include <map> 
 #include <unordered_map>
 #include <vector>
 #include <string>
+#include <d3dcompiler.h>
+#include <DirectXMath.h>
+#include "assimp/Importer.hpp"
+#include "Assimp/assimp/scene.h"
+#include "Assimp/assimp/postprocess.h"
+#pragma comment(lib, "d3d11.lib")
 
 
 // -------------------------------------------------
 // Contains info about a single Sampler in a shader
 // -------------------------------------------------
-struct SimpleSampler
+struct BasicSampler
 {
 	unsigned int Index;		// The raw index of the Sampler
 	unsigned int BindIndex; // The register of the Sampler
@@ -37,7 +39,7 @@ struct RenderWindow
 // --------------------------------------------------------
 // Contains info about a single SRV in a shader
 // --------------------------------------------------------
-struct SimpleSRV
+struct BasicSRV
 {
 	unsigned int Index;		// The raw index of the SRV
 	unsigned int BindIndex; // The register of the SRV
@@ -73,8 +75,10 @@ struct RendererMainVars
 };
 
 
-// Vertex variables for creating shader
-struct SimpleShaderVariables
+// -------------------------------------------------------------------------
+// Vertex variables for creating and storing buffers transferred to the GPU
+// --------------------------------------------------------------------------
+struct VertexShaderVars
 {
 	bool shaderValid;
 	ID3DBlob* shaderBlob;
@@ -83,8 +87,10 @@ struct SimpleShaderVariables
 };
 
 
-// Pixel variables for creating shader
-struct SimpleShaderPixelVariables
+// ------------------------------------------------------------------------
+// Pixel variables for creating and storing buffers transferred to the GPU
+// ------------------------------------------------------------------------
+struct PixelShaderVars
 {
 	bool shaderValid;
 	ID3DBlob* shaderBlob = 0;
@@ -93,9 +99,10 @@ struct SimpleShaderPixelVariables
 };
 
 
-// Sky
-// Vertex variables for creating shader
-struct SimpleShaderVertexVariablesSky
+// -----------------------------Sky-------------------------------------------
+// Vertex variables for creating and storing sky buffers transferred to the GPU
+// ----------------------------------------------------------------------------
+struct SkyVS_Vars
 {
 	bool shaderValid;
 	ID3DBlob* shaderBlob;
@@ -104,9 +111,10 @@ struct SimpleShaderVertexVariablesSky
 };
 
 
-// Sky
-// Pixel variables for creating shader
-struct SimpleShaderPixelVariablesSky
+// ---------------------------Sky----------------------------------------------
+// Pixel variables for creating and storing sky buffers transferred to the GPU
+// ----------------------------------------------------------------------------
+struct SkyPS_Vars
 {
 	bool shaderValid;
 	ID3DBlob* shaderBlob = 0;
@@ -120,7 +128,7 @@ struct SimpleShaderPixelVariablesSky
 // - Can be loaded for more shaders for every material, for now it is 
 //   attaching with 1 vs and ps i.e. the two .hlsl files
 // -------------------------------------------------------------------------------
-struct SimpleVertexShaderStruct
+struct InputLayoutVertexShader
 {
 	bool perInstanceCompatible;
 	ID3D11InputLayout* inputLayout = 0;
@@ -128,18 +136,19 @@ struct SimpleVertexShaderStruct
 };
 
 
-// --------------------------------------------------------------------
+// ---------------------------------------
 // Pixel shader
-// - Can be loaded for more shaders for every material, for now it is 
-//   attaching with 1 vs and ps i.e. the two .hlsl files
-// --------------------------------------------------------------------
-struct SimplePixelShaderStruct
+// Load more shaders for every material
+// ---------------------------------------
+struct PixelShader
 {
 	ID3D11PixelShader* shader = 0;
 };
 
 
-// Sky Vertex Shader
+// -----------------------------------
+// Sky vertex shader & input layout
+// -----------------------------------
 struct SkyVarsVertexShader
 {
 	bool perInstanceCompatible;
@@ -148,7 +157,9 @@ struct SkyVarsVertexShader
 };
 
 
-// Sky Pixel Shader
+// -----------------
+// Sky pixel shader
+// -----------------
 struct SkyVarsPixelShader
 {
 	ID3D11PixelShader* shader = 0;
@@ -166,6 +177,7 @@ struct ShaderStrings
 	LPCWSTR pixelShaderString;
 };
 
+
 // ------------------------------------------------------------------------
 // - String names passed for creating the two shaders
 // - Could create the instances of same component 
@@ -182,7 +194,7 @@ struct ShaderStringsSky
 // Used by simple shaders to store information about
 // specific variables in constant buffers
 // --------------------------------------------------------
-struct SimpleShaderVariable
+struct ShaderVariableInfo
 {
 	unsigned int ByteOffset;
 	unsigned int Size;
@@ -195,14 +207,14 @@ struct SimpleShaderVariable
 // constant buffer in a shader, as well as
 // the local data buffer for it
 // ------------------------------------------
-struct SimpleConstantBuffer
+struct ConstantBufferInfo
 {
 	std::string Name;
 	unsigned int Size;
 	unsigned int BindIndex;
 	ID3D11Buffer* ConstantBuffer = 0;
 	unsigned char* LocalDataBuffer;
-	std::vector<SimpleShaderVariable> Variables;
+	std::vector<ShaderVariableInfo> Variables;
 };
 
 
@@ -210,15 +222,15 @@ struct SimpleConstantBuffer
 // - Vertex shader contents extracted from .hlsl
 // - Expand for more vertex shaders and search from library with key
 // ----------------------------------------------------------------------------
-struct ShaderVectorsofStructs
+struct VertexShaderBuffVars
 {
-	SimpleConstantBuffer* constantBuffers = 0; // For index-based lookup
-	std::vector<SimpleSRV*>		shaderResourceViews = {0};
-	std::vector<SimpleSampler*>	samplerStates = {0};
-	std::unordered_map<std::string, SimpleConstantBuffer*> cbTable;
-	std::unordered_map<std::string, SimpleShaderVariable> varTable;
-	std::unordered_map<std::string, SimpleSRV*> textureTable;
-	std::unordered_map<std::string, SimpleSampler*> samplerTable;
+	ConstantBufferInfo* constantBuffers = 0; // For index-based lookup
+	std::vector<BasicSRV*>		shaderResourceViews = {0};
+	std::vector<BasicSampler*>	samplerStates = {0};
+	std::unordered_map<std::string, ConstantBufferInfo*> cbTable;
+	std::unordered_map<std::string, ShaderVariableInfo> varTable;
+	std::unordered_map<std::string, BasicSRV*> textureTable;
+	std::unordered_map<std::string, BasicSampler*> samplerTable;
 };
 
 
@@ -226,15 +238,15 @@ struct ShaderVectorsofStructs
 // - Pixel shader contents extracted from .hlsl
 // - Expand for more vertex shaders and search from library with key
 // -------------------------------------------------------------------------
-struct ShaderVectorsofStructsPixel
+struct PixelShaderBuffVars
 {
-	SimpleConstantBuffer* constantBuffers; // For index-based lookup
-	std::vector<SimpleSRV*>		shaderResourceViews;
-	std::vector<SimpleSampler*>	samplerStates;
-	std::unordered_map<std::string, SimpleConstantBuffer*> cbTable;
-	std::unordered_map<std::string, SimpleShaderVariable> varTable;
-	std::unordered_map<std::string, SimpleSRV*> textureTable;
-	std::unordered_map<std::string, SimpleSampler*> samplerTable;
+	ConstantBufferInfo* constantBuffers; // For index-based lookup
+	std::vector<BasicSRV*>		shaderResourceViews;
+	std::vector<BasicSampler*>	samplerStates;
+	std::unordered_map<std::string, ConstantBufferInfo*> cbTable;
+	std::unordered_map<std::string, ShaderVariableInfo> varTable;
+	std::unordered_map<std::string, BasicSRV*> textureTable;
+	std::unordered_map<std::string, BasicSampler*> samplerTable;
 };
 
 
@@ -243,15 +255,15 @@ struct ShaderVectorsofStructsPixel
 // - Vertex shader contents extracted from .hlsl
 // - Expand for more vertex shaders and search from library with key
 // ----------------------------------------------------------------------------
-struct ShaderVectorsofStructsSky
+struct VertexShaderBuffSkyVars
 {
-	SimpleConstantBuffer* constantBuffers = 0; // For index-based lookup
-	std::vector<SimpleSRV*>		shaderResourceViews = { 0 };
-	std::vector<SimpleSampler*>	samplerStates = { 0 };
-	std::unordered_map<std::string, SimpleConstantBuffer*> cbTable;
-	std::unordered_map<std::string, SimpleShaderVariable> varTable;
-	std::unordered_map<std::string, SimpleSRV*> textureTable;
-	std::unordered_map<std::string, SimpleSampler*> samplerTable;
+	ConstantBufferInfo* constantBuffers = 0; // For index-based lookup
+	std::vector<BasicSRV*>		shaderResourceViews = { 0 };
+	std::vector<BasicSampler*>	samplerStates = { 0 };
+	std::unordered_map<std::string, ConstantBufferInfo*> cbTable;
+	std::unordered_map<std::string, ShaderVariableInfo> varTable;
+	std::unordered_map<std::string, BasicSRV*> textureTable;
+	std::unordered_map<std::string, BasicSampler*> samplerTable;
 };
 
 
@@ -260,30 +272,15 @@ struct ShaderVectorsofStructsSky
 // - Pixel shader contents extracted from .hlsl
 // - Expand for more vertex shaders and search from library with key
 // -------------------------------------------------------------------------
-struct ShaderVectorsofStructsPixelSky
+struct PixelShaderBuffSkyVars
 {
-	SimpleConstantBuffer* constantBuffers; // For index-based lookup
-	std::vector<SimpleSRV*>		shaderResourceViews;
-	std::vector<SimpleSampler*>	samplerStates;
-	std::unordered_map<std::string, SimpleConstantBuffer*> cbTable;
-	std::unordered_map<std::string, SimpleShaderVariable> varTable;
-	std::unordered_map<std::string, SimpleSRV*> textureTable;
-	std::unordered_map<std::string, SimpleSampler*> samplerTable;
-};
-
-
-// ----------------------Old struct, do not need anymore-----------------------------------
-// - mesh worldMatrix is passed every frame to vertex shader
-// - The view and projection matrices are passed by the camera
-// - Old version supported this struct but replaced with mesh and camera components.
-// - Could still be used without the two components, make sure to add to registry in Init().
-// -----------------------------------------------------------------------------------------
-struct WorldMatrices
-{
-	// The matrices to go from model space to screen space
-	DirectX::XMFLOAT4X4 worldMatrix;
-	DirectX::XMFLOAT4X4 viewMatrix;
-	DirectX::XMFLOAT4X4 projectionMatrix;
+	ConstantBufferInfo* constantBuffers; // For index-based lookup
+	std::vector<BasicSRV*>		shaderResourceViews;
+	std::vector<BasicSampler*>	samplerStates;
+	std::unordered_map<std::string, ConstantBufferInfo*> cbTable;
+	std::unordered_map<std::string, ShaderVariableInfo> varTable;
+	std::unordered_map<std::string, BasicSRV*> textureTable;
+	std::unordered_map<std::string, BasicSampler*> samplerTable;
 };
 
 
@@ -297,8 +294,7 @@ struct MeshRenderVars
 	int numIndices;
 };
 
-// Sky mesh
-// ---------------------------------------------
+// -------------------Sky mesh ------------------
 // Store mesh buffers after loading into device.
 // ---------------------------------------------
 struct MeshRenderVarsSky
@@ -308,7 +304,10 @@ struct MeshRenderVarsSky
 	int numIndices;
 };
 
-// Sky stuff!
+
+// ------------------------
+// Sky file format buffers
+// ------------------------
 struct SkyVars
 {
 	ID3D11ShaderResourceView* skySRV;
@@ -345,15 +344,16 @@ struct FPSData
 
 // ---------------------------------------------------------
 // A custom vertex definition
-// - Calculate and store position, uv space and normal 
+// - Calculate and store position, uv space, normal & Bone info
 //	 to the camera for each mesh entity passed to the shader
-// - Updated to support lighting and eventually textures
 // ---------------------------------------------------------
 struct Vertex
 {
 	DirectX::XMFLOAT3 Position;	    // The position of the vertex
 	DirectX::XMFLOAT2 UV;           // UV Coordinate for texturing 
 	DirectX::XMFLOAT3 Normal;       // Normal for lighting
+	DirectX::XMINT4 BoneIDs;
+	DirectX::XMFLOAT4 Weights;
 };
 
 
@@ -382,6 +382,24 @@ struct MeshEntityDataSky
 	DirectX::XMFLOAT3 position;
 	DirectX::XMFLOAT3 rotation;
 	DirectX::XMFLOAT3 scale;
+};
+
+
+// --------------
+// Bone resources
+// --------------
+struct BoneInfo
+{
+	DirectX::XMMATRIX BoneOffset;
+	DirectX::XMMATRIX FinalTransformation;
+
+};
+struct MeshBoneData
+{
+	std::map<std::string, UINT> mBoneMapping; // maps a bone name to its index
+	std::vector<BoneInfo> mBoneInfo; 
+	UINT mNumBones;
+	DirectX::XMMATRIX GlobalInverseTransform;
 };
 
 

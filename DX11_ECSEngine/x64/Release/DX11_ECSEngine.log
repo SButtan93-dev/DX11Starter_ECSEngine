@@ -1,0 +1,5 @@
+﻿  Generating code
+  Previous IPDB not found, fall back to full compilation.
+  All 5054 functions were compiled because no usable IPDB/IOBJ from previous compilation was found.
+  Finished generating code
+  DX11_ECSEngine.vcxproj -> G:\Engine\New folder\DX11Starter_ECSEngine\x64\Release\DX11_ECSEngine.exe

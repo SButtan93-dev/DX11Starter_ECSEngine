@@ -1,0 +1,5 @@
+G:\Engine\New folder\DX11Starter_ECSEngine\x64\Release\PixelShader.cso
+G:\Engine\New folder\DX11Starter_ECSEngine\x64\Release\SkyPS.cso
+G:\Engine\New folder\DX11Starter_ECSEngine\x64\Release\SkyVS.cso
+G:\Engine\New folder\DX11Starter_ECSEngine\x64\Release\VertexShader.cso
+G:\Engine\New folder\DX11Starter_ECSEngine\DX11_ECSEngine\x64\Release\DX11_ECSEngine.vcxproj.CopyComplete
