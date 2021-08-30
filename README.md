@@ -26,6 +26,11 @@ For more more information on the use of EnTT, visit [EnTT wiki](https://github.c
 ![20k meshes](https://github.com/SButtan93-dev/DX11Starter_ECSEngine/blob/master/20k.gif)
 </br>
 
+#### 1k meshes with animation (current stage)
+
+![1k meshes with animation](https://github.com/SButtan93-dev/DX11Starter_ECSEngine/blob/master/1k_AnimationMeshes.gif)
+</br>
+
 # Build
 Clone and run the engine (.sln) on VS2019.
 
