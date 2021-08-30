@@ -3,8 +3,8 @@ The engine is aimed for learning and education purposes. Designed with a step-by
 
 ## Features
 * Controls- WASD for relative movement, spacebar and 'X' key for abolute movement on the same axis, left mouse click for rotation, 'Shift' key for sprint and 'R' for reset.
-* Texture material with support of diffuse and specular maps. Toggle material using 'I' and 'O' keys.
-* Spawn multiple meshes with .obj file format support. Tested for 20k meshes * each having 4560 vertices i.e., a total of 91,200,000 vertices passed as a buffer to 1 shader material, running on Intel i5, GTX 1060 & 16GB RAM with 40 fps on average.
+* Material support for diffuse and specular maps.
+* Spawn multiple meshes with Assimp library support. Currently, the engine pushes single shader for animated mesh models with 52 bones, ~20k vertices with the bottleneck to iterate each bone based on elapsed time each frame. Other tests include 20k meshes * each having 4560 vertices i.e., a total of 91,200,000 vertices passed as a buffer to 1 shader material, running on Intel i5, GTX 1060 & 16GB RAM with 40 fps on average. 
 * Point & Directional light support.
 * Easy to expand engine. Add a feature by first creating a data component as a C++ struct in Components.h, then creating their entity in InitEngine.cpp and finally calling their system classes appropriately such as camera, mesh, rendering core etc., by passing the registry using EnTT library.
 * Easy to organize and understand code, as an advantage to ECS model paradigm.
