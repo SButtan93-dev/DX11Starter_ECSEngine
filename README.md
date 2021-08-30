@@ -28,6 +28,7 @@ For more more information on the use of EnTT, visit [EnTT wiki](https://github.c
 
 #### 1k meshes with animation (current stage)
 
+![1k meshes with animation](https://github.com/SButtan93-dev/DX11Starter_ECSEngine/blob/master/1k_AnimationMeshes_CloseUp.gif)
 ![1k meshes with animation](https://github.com/SButtan93-dev/DX11Starter_ECSEngine/blob/master/1k_AnimationMeshes.gif)
 </br>
 
