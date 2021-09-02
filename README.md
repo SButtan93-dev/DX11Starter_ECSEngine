@@ -39,7 +39,7 @@ Clone and run the engine (.sln) on 'Release' mode VS2019. The dependencies are i
 MIT.
 
 # Dependencies
+* DirectX11 graphics API as rendering core to communicate with GPU.
 * [EnTT](https://github.com/skypjack/entt) architecture for performance.
 * [NuGet](https://www.nuget.org/packages/directxtk_desktop_2017/) for converting textures.
 * [Assimp](https://www.assimp.org/) with mesh loading and animation support.
-* DirectX 11 as rendering core.
