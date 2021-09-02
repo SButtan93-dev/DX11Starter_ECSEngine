@@ -33,7 +33,7 @@ For more more information on the use of EnTT, visit [EnTT wiki](https://github.c
 </br>
 
 # Build
-Clone and run the engine (.sln) on VS2019.
+Clone and run the engine (.sln) on 'Release' mode on VS2019. The dependencies are included.
 
 # License
 MIT.
